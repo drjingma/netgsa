@@ -1,6 +1,4 @@
 # netgsa
 Network-based Gene Set Analysis
 
-Carry out Network-based Gene Set Analysis by incorporating external information about interactions among genes, as well as novel interactions learned from data.
-
-Ref: Network-based pathway enrichment analysis with incomplete network information. Ma et a. (2016), Bioinformatics
+The current version gives an error message if either network has no interactions at all, but this should be allowed in future versions. 
