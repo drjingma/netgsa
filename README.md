@@ -5,4 +5,6 @@ Network-based Gene Set Analysis
 
 2. We should also include one sample test using NetGSA.
 
-3. For some settings, the variance estimates from approxVarEst could be negative. This affects the subsequent estimation with profile likelihood. We should thus add a validity check after approxVarEst. If negative, then use the previous simple estimates as the initialization for profileVarEst. In addition, approxVarEst may not converge for p > 2000. In such settings, we directly apply profileVarEst. 
+3. For some settings, the variance estimates from approxVarEst could be negative. This affects the subsequent estimation with profile likelihood. We should thus add a validity check after approxVarEst. If negative, then use the previous simple estimates as the initialization for profileVarEst. In addition, approxVarEst may not converge for p > 2000. In such settings, we directly apply profileVarEst. Ali also mentioned potential identifiability issue with NetGSA.
+
+4. When do we get an empty estimated network based on a pre-specified graph and data? What guidance to provide in such a setting?
