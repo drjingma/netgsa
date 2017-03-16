@@ -9,6 +9,7 @@ Network-based Gene Set Analysis
 
 4. When do we get an empty estimated network based on a pre-specified graph and data? What guidance to provide in such a setting?
 5. The following is a strange error message:
+
     Error in seq.default(1, dim(zero.pos)[1]) : 'to' must be of length 1
  It is strange because I don't see the same error message when using code from my end instead of the R package. It is to do with the zeroInd() function. Something seems to be wrong with the input matrix. 
 6. New error message when running permuted NetGSA: 
