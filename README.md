@@ -14,7 +14,7 @@ Network-based Gene Set Analysis
  It is strange because I don't see the same error message when using code from my end instead of the R package. It is to do with the zeroInd() function. Something seems to be wrong with the input matrix. 
 6. New error message when running permuted NetGSA: 
 
- Error in bic.netEst(X = t(current_data[[k]]), one = oneMat, lambda = lambda_vec[i],  :
-  task 1 failed - "'to' must be of length 1"
- Calls: %dopar% -> <Anonymous>
- Execution halted
+    Error in bic.netEst(X = t(current_data[[k]]), one = oneMat, lambda = lambda_vec[i],  :
+      task 1 failed - "'to' must be of length 1"
+    Calls: %dopar% -> <Anonymous>
+    Execution halted
