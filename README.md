@@ -1,7 +1,7 @@
 # netgsa
 Network-based Gene Set Analysis
 
-1. The current version gives an error message if either network has no interactions at all, but this should be allowed in future versions. 
+1. The current version gives an error message if either network has no interactions at all, but the case where only one network is empty should be allowed in future versions. 
 
 2. We should also include one sample test using NetGSA.
 
@@ -18,7 +18,7 @@ Network-based Gene Set Analysis
     
     Error in seq.default(1, dim(zero.pos)[1]) : 'to' must be of length 1
  
-    It is strange because I don't see the same error message when using code from my end instead of the R package. It is to do with the zeroInd() function. Something seems to be wrong with the input matrix. 
+    This happens when the input zero matrix is empty. I've made changes to the offline file.
  
 
     
