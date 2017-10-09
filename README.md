@@ -19,6 +19,5 @@ Network-based Gene Set Analysis
     Error in seq.default(1, dim(zero.pos)[1]) : 'to' must be of length 1
  
     This happens when the input zero matrix is empty. I've made changes to the offline file.
- 
-
+6. That the input matrices for NetGSA and network estimation are of different dimensions, one is p by n, whereas the other is n by p. 
     
