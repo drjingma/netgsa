@@ -23,4 +23,6 @@ Network-based Gene Set Analysis
 6. That the input matrices for NetGSA and network estimation are of different dimensions, one is p by n, whereas the other is n by p. 
 
 7. Need to make it clear that NetGSA is designed for inference with large sample sizes. If the sample size is too small, return a warning message. 
+
+8. It would be great to make the interface of NetGSA more accessible for biomedical scientists. In particular, we may try to connect with the bioconductor package KEGGgraph, and eventually make NetGSA a built-in option in http://www.metaboanalyst.ca/. The latter requires a bit more work in finding the right KEGG metabolic network, because individual metabolomic studies may not detect all metabolites that are connected in KEGG. Ali has a student working on this. 
     
