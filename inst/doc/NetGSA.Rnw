@@ -1,0 +1,127 @@
+%\VignetteEngine{knitr::knitr}
+%\VignettePackage{netgsa}
+%\VignetteIndexEntry{netgsaVignette}
+
+\documentclass{article}
+
+\usepackage{natbib}
+\usepackage{graphics}
+\usepackage{amsmath}
+\usepackage{geometry}
+\usepackage{indentfirst}
+\usepackage[utf8]{inputenc}
+
+\DeclareMathOperator{\var}{var}
+\DeclareMathOperator{\cov}{cov}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<foo,include=FALSE,echo=FALSE>>=
+options(keep.source = TRUE, width = 60)
+foo <- packageDescription("netgsa")
+@
+\title{Network-based Gene Set Analysis Example (Version \Sexpr{foo$Version})}
+\author{Jing Ma (jingma@fredhutch.org)}
+\maketitle
+
+\section{Introduction}
+
+In this tutorial, we describe the NetGSA workflow using a breast cancer data example downloaded from TCGA \citep{cancer2012comprehensive}. We will cover steps on data preprocessing and enrichment analysis for KEGG pathways. In addition, we present examples on how to incorporate existing network information (e.g. curated edges from KEGG) to improve the power of pathway enrichment analysis.  
+
+%The package \verb@netgsa@ also consists of several examples based on simulated data, which can be found in the dataset \verb@netgsaex1@, \verb@netgsaex2@, \verb@netgsaex3@ and \verb@netgsaexDAG@. 
+
+\section{Case Studies}
+The following dataset comes from a breast cancer study \cite{cancer2012comprehensive}, which consists of gene expression data from 520 subjects including 117 estrogen-receptor-negative (ER$-$) and 403 estrogen-receptor-positive (ER$+$). The goal is to generate a diagnostic pathway signatures that could distinguish patients with different ER statuses by comparing gene expression data from the two classes. These signatures could provide additional clinical benefit in diagnosing breast cancer.
+
+\subsection{Preparation: package installation}
+
+We first load necessary R/Bioconductor packages. 
+
+<<geo>>=
+## step 0: setup
+#source("http://bioconductor.org/biocLite.R")
+#biocLite(c("graphite","pathview"))
+library(graphite)
+library(Rgraphviz)
+library(netgsa)
+
+# devtools::install_github('oganm/MSigDB')
+# require(MSigDB) # useful if you input pathways from MSigDB
+@
+
+\subsection{Step 1: loading RNA-seq data}
+When loading the data, it is important to check the distribution of raw sequencing reads and perform log transformation if necessary. Data in this example were already log transformed.  
+
+<<eval=FALSE>>=
+data("breastcancer2012.rda")
+@
+
+We can find out the ER status by looking at the following variable.
+<<eval=FALSE>>=
+table(group)
+@
+
+Row names of the expression data reflect the Entrez gene IDs, same as those used in KEGG pathways. 
+<<eval=FALSE>>=
+head(rownames(x))
+@
+
+
+\subsection{Step 2: pathway enrichment analysis}
+
+We consider pathways from KEGG \citep{kanehisa2000kegg}. This can be done using the \verb@graphite@ package. 
+<<canonical pathways>>=
+paths <- pathways('hsapiens','kegg')
+length(paths)
+paths[[1]]
+nodes(paths[[1]])
+@
+
+Alternatively, one can also apply the function {\tt preparePathways}.
+<<eval=FALSE>>=
+pathwayList <- preparePathways('kegg')
+pathwayList[[1]]
+@
+
+For the purpose of this tutorial, we use the pathways stored in {\tt pathways}:
+<<select pathways>>=
+pathways[1:2]
+@
+
+There are in total 100 pathways in the object {\tt pathways}. To illustrate the use of NetGSA, 
+consider only genes from ``ErbB signaling pathway" and ``Jak-STAT signaling pathway". Given the pathways, one first estimates the underlying partial correlation networks, possibly while incorporating available network information. 
+
+<<eval=FALSE>>=
+genenames <- unique(c(pathways[[24]], pathways[[52]]))
+p <- length(genenames)
+sx <- x[(rownames(x) %in% genenames),]
+out <- prepareAdjacencyMatrix(sx, group, pathways,'../data/edgelist.txt',NULL)
+@
+
+The function {\tt prepareAdjacencyMatrix} returns the weighted adjacency matrices which can be used directly for pathway enrichment:
+<<eval=FALSE>>=
+test1 <- NetGSA(out$Amat, sx, group, pathways = out$B, lklMethod = 'REHE')
+@
+
+Alternatively, one can refit the adjacency matrices with carefully chosen tuning parameters. We recommend using carefully chosen tuning parameters as this yields better estimates of the networks. 
+<<eval=FALSE>>=
+ncond <- length(unique(group))
+Amat <- vector("list",ncond)
+for (k in 1:ncond){
+  data_c <- sx[,(group==k)]
+  fitBIC <- bic.netEst.undir(data_c,one=out$Adj,zero=out$Zero_Adj,
+                             lambda=seq(1,10)*sqrt(log(p)/ncol(data_c)),eta=0.1)
+  fit <- netEst.undir(data_c,one=out$Adj,zero=out$Zero_Adj,
+                      lambda=which.min(fitBIC$BIC)*sqrt(log(p)/ncol(data_c)),eta=0.1)
+  Amat[[k]] <- fit$Adj
+}
+test2 <- NetGSA(Amat, sx, group, pathways = out$B, lklMethod = 'REHE')
+@
+
+\subsection{Step 4: pathway visualization with Pathview}
+
+
+\bibliographystyle{plain}
+\bibliography{bibli.bib}
+\end{document}
