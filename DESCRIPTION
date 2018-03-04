@@ -9,7 +9,8 @@ Description: Carry out Network-based Gene Set Analysis by incorporating external
 Depends: R (>= 3.0.1)
 Imports: corpcor, glmnet, graph, graphite, igraph, Matrix, quadprog
 Remotes: github::JClavel/glassoFast, github::oganm/MSigDB
-Suggests: MASS, knitr 
+Suggests: MASS, knitr ,
+    testthat
 License: GPL (>=2)
 LazyLoad: yes
 LazyData: true
