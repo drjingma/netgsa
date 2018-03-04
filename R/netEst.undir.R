@@ -8,6 +8,7 @@ netEst.undir <-
     
     if (is.null(zero)) {
       zero = matrix(0, p, p)
+      rownames(zero) = rownames(x)
     } else {
       # check if variables match
       if (!identical(rownames(zero),rownames(x))){
@@ -17,6 +18,7 @@ netEst.undir <-
     
     if (is.null(one)) {
       one = matrix(0, p, p)
+      rownames(one) = rownames(x)
     }  else {
       # check if variables match
       if (!identical(rownames(one),rownames(x))){

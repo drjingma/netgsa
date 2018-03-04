@@ -6,10 +6,12 @@ function(x, zero = NULL, one = NULL, lambda, rho = NULL,weight = NULL, eta = 0, 
   
   if (is.null(zero)) {
     zero = matrix(0, p, p)
+    rownames(zero) = rownames(x)
   }
   
   if (is.null(one)) {
     one = matrix(0, p, p)
+    rownames(one) = rownames(x)
   }
   
   if (min(lambda)==0){
