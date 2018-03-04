@@ -3,7 +3,7 @@
 language: R
 sudo: false
 cache: packages
-r: bioc-devel
+r: bioc-release
 bioc_packages: graphite, graph
 r_github_packages: JClavel/glassoFast
 warnings_are_errors: true
