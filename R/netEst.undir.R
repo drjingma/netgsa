@@ -8,10 +8,20 @@ netEst.undir <-
     
     if (is.null(zero)) {
       zero = matrix(0, p, p)
+    } else {
+      # check if variables match
+      if (!identical(rownames(zero),rownames(x))){
+        stop('Variables in the nonedge matrix and data do not match!')
+      }
     }
     
     if (is.null(one)) {
       one = matrix(0, p, p)
+    }  else {
+      # check if variables match
+      if (!identical(rownames(one),rownames(x))){
+        stop('Variables in the edge matrix and data do not match!')
+      }
     }
     
     if (sum(one*zero) > 0){
