@@ -4,4 +4,12 @@ language: R
 sudo: false
 cache: packages
 r: bioc-devel
-bioc_packages: BiocCheck
+install: 
+   - ./travis-tool.sh install_bioc "graphite"
+   - ./travis-tool.sh install_bioc "graph"
+   - ./travis-tool.sh install_github "JClavel/glassoFast"
+
+warnings_are_errors: true
+script:
+   - R CMD build . --no-resave-data --no-manual
+   - R CMD check *tar.gz --as-cran --timings --no-manual
