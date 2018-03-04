@@ -10,6 +10,7 @@ bioc_packages:
    - graph
 r_github_packages: 
    - JClavel/glassoFast
+   - oganm/MSigDB
 script:
-   - R CMD build . --no-resave-data --no-manual
-   - R CMD check *tar.gz --as-cran --timings --no-manual
+   - R CMD build . --no-resave-data 
+   - R CMD check *tar.gz --as-cran  
