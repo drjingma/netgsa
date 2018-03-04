@@ -1,0 +1,191 @@
+---
+title: 'netgsa: Network-based Gene Set Analysis'
+author: "Jing Ma"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+bibliography: bibli.bib
+
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+In this vignette, we demonstrate the NetGSA workflow using a breast cancer data example downloaded from the Cancer Genome Atlas [@cancer2012comprehensive]. In particular, we illustrate how to incorporate existing network information (e.g. curated edges from KEGG) to improve the power of pathway enrichment analysis with NetGSA. Details of the method are avaialble in @ma2016network.  
+
+## Case Studies
+Our example data set comes from a breast cancer study [@cancer2012comprehensive], which consists of gene expression data from 520 subjects including 117 estrogen-receptor-negative (ER-) and 403 estrogen-receptor-positive (ER+). The goal is to generate a diagnostic pathway signatures that could distinguish patients with different ER statuses by comparing gene expression data from the two classes. These signatures could provide additional clinical benefit in diagnosing breast cancer.
+
+### Preparation
+We first load necessary R/Bioconductor packages. Additional packages such as **MSigDB** are useful if you would like to import pathways from [MSigDB](http://software.broadinstitute.org/gsea/msigdb). 
+
+```{r package, eval=FALSE}
+# source("http://bioconductor.org/biocLite.R")
+# biocLite(c("graphite"))
+# devtools::install_github('oganm/MSigDB')
+library(glassoFast)
+library(graphite)
+library(igraph)
+library(MSigDB) 
+library(netgsa)
+library(Rgraphviz)
+```
+
+
+### Step 1: loading RNA-seq data
+
+NetGSA works directly with the expression data matrix. When loading the data, it is important to check the distribution of raw sequencing reads and perform log transformation if necessary. Data in this example were already log transformed. It is also important to label the rows and columns of the data matrix. Rows of the data matrix correspond to genes, whereas columns to subjects. Genes in this data matrix were labeled with Entrez IDs, same as those used in KEGG pathways. 
+
+```{r data}
+load("breastcancer2012.rda")
+# data("breastcancer2012.rda")
+ls()
+```
+
+```{r include=FALSE}
+label_A <- 'A'
+label_edgelist <- 'edgelist'
+label_group <- 'group'
+label_nonedgelist <- 'nonedgelist'
+label_pathways <- 'pathways'
+label_x <- 'x'
+```
+
+The variables in this data object include the network information (`r label_A`), the data frame consisting of known edges (`r label_edgelist`), the group labels (`r label_group`) for ER status, the data frame consisting of (a subset of) the non-edges (`r label_nonedgelist`), a list of KEGG pathways indexed with Entrez gene IDs (`r label_pathways`) and the data matrix (`r label_x`). 
+
+
+```{r rownames}
+head(rownames(x))
+```
+
+We can find out the ER status by looking at the group labels.
+```{r ER status}
+table(group)
+```
+
+The two data frames `r label_nonedgelist` and `r label_edgelist` consist of edges (nonedges) extracted from user provided sources. Eace row represents one edge. The first column represents the starting node, with the second column being the end node. The last column indicates whether the edge is directed. As of now, NetGSA assumes that all edges are either simultaneously undirected or simultaneously directed, as determined by the first edge.  
+```{r edgelist}
+head(edgelist)
+```
+
+### Step 2: pathway enrichment analysis
+```{r packages, include=FALSE}
+library(glassoFast)
+library(glmnet)
+library(graphite)
+library(igraph)
+library(Rgraphviz)
+library(MSigDB) 
+# library(netgsa)
+source("../R/adj2inf.R")
+source("../R/approxVarEst.R")
+source("../R/bic.netEst.undir.R")
+source("../R/call.netgsa.R")
+source("../R/get.contrast.R")
+source("../R/glmnet.soft.R")
+source("../R/graphlaplacian.R")
+source("../R/he_method.R")
+source("../R/matTr.R")
+source("../R/netEst.dir.R")
+source("../R/netEst.undir.R")
+source("../R/netgsa.ftest.R")
+source("../R/netgsa.onesample.R")
+source("../R/NetGSA.R")
+source("../R/netgsa.ttest.R")
+source("../R/newton.R")
+source("../R/normalizeAdj.R")
+source("../R/prepareAdjacencyMatrix.R")
+source("../R/preparePathways.R")
+source("../R/profile.newton.se.R")
+source("../R/zeroInd.R")
+```
+
+We consider pathways from KEGG [@kanehisa2000kegg]. KEGG pathways can be accessed in R using the **graphite** package. 
+```{r pathways}
+paths <- pathways('hsapiens','kegg')
+paths[[1]]
+head(nodes(paths[[1]]))
+```
+
+Alternatively, one can also use the function *preparePathways* to import pathways from KEGG. 
+```{r preparePathways}
+pathwayList <- preparePathways('kegg')
+head(pathwayList[[1]])
+```
+
+Note if one chooses to import pathways from **MSigDB**, genes in the resulting pathways will be labeled using gene symbols. As a result, the data matrix should also use the same set of gene names. 
+```{r MSigDB}
+pathwayList <- preparePathways('MSigDB')
+head(pathwayList[[1]])
+```
+
+
+For the purpose of this tutorial, we use the pathways stored in *pathways*:
+```{r our pathways}
+pathways[1:2]
+```
+
+To prepare the adjacency matrices needed for the function *NetGSA*, one can read existing edges from file. For example, suppose the edges in `r label_edgelist` are stored in a csv file. The function *prepareAdjacencyMatrix* can input edges from external files or import edges from KEGG data base. 
+```{r csv}
+write.csv(edgelist,file='edgelist.txt',row.names = FALSE)
+out <- prepareAdjacencyMatrix(x, group, pathways, FALSE, 'edgelist.txt', NULL)
+```
+
+The object `r label_pathways` has in total 100 pathways. To illustrate the use of *NetGSA*, consider only genes from *ErbB signaling pathway* and *Jak-STAT signaling pathway*. Given the pathways, one first estimates the underlying networks (represented as weighted adjacency matrices), while incorporating available network information. 
+
+```{r prepareAdjacencyMatrix}
+genenames <- unique(c(pathways[[24]], pathways[[52]]))
+genenames <- intersect(genenames, rownames(x))
+p <- length(genenames)
+p
+sx <- x[match(genenames, rownames(x)),]
+sout <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, 'edgelist.txt', NULL)
+```
+
+*prepareAdjacencyMatrix* returns the pathway indicator matrix that will be used in the *NetGSA* function. In this example, due to the high overlapping among pathways, the selected genes actually cover 41 pathways.  
+```{r B}
+# pathway indicator matrix
+dim(sout$B)
+```
+
+The returned 0-1 adjacency matrices from *prepareAdjacencyMatrix* can be used as network information for estimating the partial correlation network under each condition. We recommend using carefully chosen tuning parameters as this yields better estimates of the networks. 
+```{r estimate matrices}
+ncond <- length(unique(group))
+Amat <- vector("list",ncond)
+sx <- sx[match(colnames(sout$B), rownames(sx)),]
+
+for (k in 1:ncond){
+  data_c <- sx[,(group==k)]
+  # select the tuning parameter
+  fitBIC <- bic.netEst.undir(data_c,one=sout$Adj,
+                             lambda=seq(1,10)*sqrt(log(p)/ncol(data_c)),eta=0.1)
+  # refit the network
+  fit <- netEst.undir(data_c,one=sout$Adj,
+                      lambda=which.min(fitBIC$BIC)*sqrt(log(p)/ncol(data_c)),eta=0.1)
+  Amat[[k]] <- fit$Adj
+}
+```
+
+Given the networks, one can test for pathway enrichment as follows:
+```{r netgsa}
+test1 <- NetGSA(Amat, sx, group, pathways = sout$B, lklMethod = 'REHE')
+head(test1$results)
+```
+
+Note *prepareAdjacencyMatrix* can also estimate the networks if the argument *estimate_network=TRUE*. In such cases, *prepareAdjacencyMatrix* returns the weighted adjacency matrices estimated under a fixed set of tuning parameters, which may not be optimal. The resulting adjacency matrices can be directly used in *NetGSA* for pathway enrichment. 
+```{r netgsa 2}
+sout <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, 'edgelist.txt', NULL, estimate_network=TRUE, lambda_c = 9, eta=0.1)
+test2 <- NetGSA(sout$Amat, sx, group, pathways = sout$B, lklMethod = 'REHE')
+head(test2$results)
+```
+
+
+## References
+
