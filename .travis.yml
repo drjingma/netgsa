@@ -5,7 +5,7 @@ sudo: false
 cache: packages
 r: bioc-release
 before_install:
-  - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
+  - curl -OL https://github.com/craigcitro/r-travis/blob/master/scripts/travis-tool.sh
 install:
   - ./travis-tool.sh install_bioc graphite
   - ./travis-tool.sh install_bioc graph
