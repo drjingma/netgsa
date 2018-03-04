@@ -29,7 +29,9 @@ We first load necessary R/Bioconductor packages. Additional packages such as **M
 ```{r package, eval=FALSE}
 # source("http://bioconductor.org/biocLite.R")
 # biocLite(c("graphite"))
-# devtools::install_github('oganm/MSigDB')
+devtools::install_github('oganm/MSigDB')
+devtools::install_github("JClavel/glassoFast")
+
 library(glassoFast)
 library(graphite)
 library(igraph)
