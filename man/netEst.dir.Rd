@@ -53,13 +53,10 @@ Ali Shojaie
 \code{\link{prepareAdjacencyMatrix}}, \code{\link{glmnet}}
 }
 \examples{
-library(glassoFast)
 library(glmnet)
 library(graph)
 library(graphite)
 library(igraph)
-library(quadprog)
-library(MASS)
 
 set.seed(1)
 

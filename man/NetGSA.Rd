@@ -59,6 +59,10 @@ Ali Shojaie and Jing Ma
 \code{\link{prepareAdjacencyMatrix}}, \code{\link{netEst.dir}}, \code{\link{netEst.undir}}
 }
 \examples{
+## make sure to install the glassoFast on GitHub
+library(devtools)
+install_github("JClavel/glassoFast")
+
 library(glassoFast)
 library(glmnet)
 library(graph)
@@ -69,9 +73,6 @@ library(quadprog)
 set.seed(1)
 data(breastcancer2012)
 
-## make sure to install the glassoFast on GitHub
-#library(devtools)
-#install_github("JClavel/glassoFast")
 
 ## -----------------Undirected networks-----------------
 ## consider genes from the "ErbB signaling pathway" and "Jak-STAT signaling pathway"
@@ -89,9 +90,9 @@ ncond <- length(unique(group))
 Amat <- vector("list",ncond)
 for (k in 1:ncond){
   data_c <- sx[,(group==k)]
-  fitBIC <- bic.netEst.undir(data_c,one=out$Adj,zero=out$Zero_Adj,
+  fitBIC <- bic.netEst.undir(data_c,one=out$Adj,
                              lambda=seq(1,10)*sqrt(log(p)/ncol(data_c)),eta=0.1)
-  fit <- netEst.undir(data_c,one=out$Adj,zero=out$Zero_Adj,
+  fit <- netEst.undir(data_c,one=out$Adj,
                       lambda=which.min(fitBIC$BIC)*sqrt(log(p)/ncol(data_c)),eta=0.1)
   Amat[[k]] <- fit$Adj
 }
