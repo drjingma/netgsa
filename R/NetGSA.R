@@ -1,94 +1,111 @@
 NetGSA <-
-function(
-    A,  #Adjacency matrix in a list	    	
-    x, 	#The p x n data matrix		      	
-    y,    #vector of class indicators of length n
-    B,  	#indicator matrix for pathways (npath x p)	    	  	
-    lklMethod = c("REML","ML"),
-    directed = FALSE,          
-    eta = 1e-1,           
-    lim4kappa = 500       
+  function(
+    A,     	
+    x, 	
+    group,    
+    pathways, 	
+    lklMethod=c("REML","ML", "HE", "REHE"),
+    sampling = FALSE,
+    sample_n = NULL,
+    sample_p = NULL, 
+    minsize=5,
+    eta=0.1,           
+    lim4kappa=500
   ){
     this.call <- match.call()
     lklMethod <- match.arg(lklMethod)
     
-    p = dim(x)[1] #No. of genes
-    n = length(y) #No. of samples in total
+    p <- dim(x)[1] #No. of genes
+    n <- length(group) #No. of samples in total
+    
+    if (is.null(rownames(x))){
+      stop('Data matrix must have rownames!')
+    }
+    
+    if (is.null(rownames(A[[1]])) || is.null(rownames(A[[2]]))){
+      stop('Adjacency matrix must have rownames!')
+    }
+    
+    if (!identical(rownames(x),colnames(pathways))){
+      stop('Genes in the data matrix and the pathway indicator matrix must be in the same order!')
+    }
+    
+    if (p > 3000) {
+      warning("netGSA may be slow for datasets with large number of genes.")
+    }
     
     if (dim(x)[2] != n) {
       stop("The dimensions of the data matrix and class vector don't match!")
     }
     
-    if (dim(B)[2] != p) {
-      stop("The dimensions of the data matrix and indicator matrix don't match!")
-    }
-    
-    if (min(apply(B,1,sum))==0){
-      stop("Empty pathways detected!")
-    }
-    
-    if (length(unique(y)) < 2) {
-      stop("There should be at least 2 unique classes in the class indicator!")
-    }
-    
-    if (min(sapply(lapply(A, abs), sum))==0) {
-      stop("No network interactions were found!")
-    }
-    
-    ##-----------------
-    ##Determine whether the network is DAG
-    ##Assume A1 and A2 are of the same type (directed or undirected)
-    isNetDAG = FALSE
-    if (directed) {    
-      gA <- graph.adjacency(A[[1]], mode="directed")
-      isNetDAG = is.dag(gA)
-    }  
-    
-    if (p > 5000) {
-      warning("netGSA may be slow for datasets with large number of genes.")
+    if (n<10){
+      warning("The sample size is too small! Use NetGSA at your discretion!")
     }
     
     ##-----------------
     ##setting up control parameters for the var estimation procedures
     varEstCntrl = list(lklMethod = lklMethod,                    
-                       s2profile = "se",   
+                       s2profile = "se",
+                       sampling = sampling,
+                       ratio = sample_n,
+                       p_sample = sample_p,
                        lb = 0.5,           
                        ub = 100,           
                        tol = 0.01)         
     
+    A_c <- A
+    if (min(sapply(lapply(A_c, abs), sum))==0) {
+      warning("No network interactions were found! Check your networks!")
+      next;
+    }
+    
     ##-----------------
-    ##Find influence matrices based on adjacency matrices A1 and A2
+    ##Determine whether the network is DAG
+    ##Assume A_c[[1]] and A_c[[2]] are of the same type (directed or undirected)
+    isNetDAG <- FALSE
+    gA <- igraph::graph_from_adjacency_matrix(A_c[[1]], mode="directed")
+    isNetDAG <- is_dag(gA)
+    
+    p_c <- p
+    x_c <- x[match(rownames(A_c[[1]]),rownames(x)),]
+    
+    ##Find influence matrices based on adjacency matrices in A_c
     ##Check if the influence matrices are well conditioned. Otherwise update eta.
-    if (directed){
-      D = lapply(A, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
-      
-      tmp = min(sapply(D, kappa)) 
+    if (isNetDAG){
+      D <- lapply(A_c, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
+      tmp <- min(sapply(D, kappa)) 
       while ((tmp> lim4kappa) && !isNetDAG) {
-        eta = eta * 2
+        eta <- eta * 2
         warning(paste("Influence matrix is ill-conditioned, using eta =", eta))
-        D = lapply(A, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
-        tmp = min(sapply(D, kappa)) 
+        D <- lapply(A_c, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
+        tmp <- min(sapply(D, kappa)) 
       }
       
-      DD = lapply(D, function(m) m %*% t(m))
-      
-      tmp = min(sapply(DD, kappa))    
+      DD <- lapply(D, function(m) m %*% t(m))
+      tmp <- min(sapply(DD, kappa))    
       while ((tmp > lim4kappa) && !isNetDAG) {
-        eta = eta * 2
+        eta <- eta * 2
         warning(paste("Influence matrix is ill-conditioned, using eta =", eta))  
-        D = lapply(A, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
-        DD = lapply(D, function(m) m %*% t(m))
-        tmp = min(sapply(DD, kappa))
+        D <- lapply(A_c, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
+        DD <- lapply(D, function(m) m %*% t(m))
+        tmp <- min(sapply(DD, kappa))
       }
       
     } else {
       #Undirected gaussian graphical model
-      #Need to normalize the matrix differently
-      Ip = diag( rep(1,p) )
-      D = lapply(A, function(m) t(chol(solve(Ip - m))) ) 
+      Ip <- diag( rep(1,p_c) )
+      D <- lapply(A_c, function(m) t(chol(solve(Ip - m)))) 
     }
+    output <- call.netgsa(D, x_c, group, pathways, varEstCntrl)
     
-    output = call.netgsa(D, x, y, B, varEstCntrl)
+    ## Update the format of the output to be consistent with other methods. 
+    out <- data.frame('pathway'= rownames(pathways),
+                      'pSize' = rowSums(pathways),
+                      'pval' = output$p.value,
+                      'pFdr' = p.adjust(output$p.value,"BH"))
     
-    return(output)
+    out <- out[order(out$pFdr),]
+    rownames(out) <- NULL
+    
+    return(list(results=out,beta=output$beta,s2.epsilon=output$s2.epsilon,s2.gamma=output$s2.gamma))
   }

@@ -1,7 +1,7 @@
 bic.netEst.undir <-
-function(X, zero = NULL, one = NULL, lambda, rho = NULL,weight = NULL, eta = 0, verbose = FALSE, eps = 1e-08) {
-  n = dim(X)[1]
-  p = dim(X)[2]
+function(x, zero = NULL, one = NULL, lambda, rho = NULL,weight = NULL, eta = 0, verbose = FALSE, eps = 1e-08) {
+  p = nrow(x)
+  n = ncol(x)
   Adj = array(0, c(p, p, length(lambda)))
   
   if (is.null(zero)) {
@@ -16,10 +16,6 @@ function(X, zero = NULL, one = NULL, lambda, rho = NULL,weight = NULL, eta = 0, 
     stop("The penalty parameter lambda needs to be greater than zero!")
   }
   
-  if (is.null(rho)) {
-    rho = 0.1*sqrt(log(p)/n)
-  }
-  
   if (!is.null(weight) ){
     if (weight < -1e-16){
       stop("Negative weight parameter detected! Please double check!")
@@ -30,11 +26,10 @@ function(X, zero = NULL, one = NULL, lambda, rho = NULL,weight = NULL, eta = 0, 
     weight = 0
   }  
 
-  
   bic.score = matrix(0, length(lambda), length(weight))
   df = matrix(0, length(lambda), length(weight))
   
-  empcov = cov(X)
+  empcov = cov(t(x))
   
   if (kappa(empcov) > 1e+3) {
     empcov = empcov + eta * diag(p)
@@ -42,9 +37,9 @@ function(X, zero = NULL, one = NULL, lambda, rho = NULL,weight = NULL, eta = 0, 
   
   for (loop.lambda in 1:length(lambda)) {
     for (loop.w in 1:length(weight)){
-      siginv = netEst.undir(X, zero, one, lambda[loop.lambda], rho, weight=weight[loop.w], eta=eta)$invcov
+      siginv = netEst.undir(x, zero, one, lambda[loop.lambda], rho=rho, weight=weight[loop.w], eta=eta)$invcov
       no.edge = sum(abs(siginv) > eps) - p
-      bic.score[loop.lambda, loop.w] = matTr(empcov %*% siginv) - log(det(siginv)) + log(n) * no.edge/(2 * n)
+      bic.score[loop.lambda, loop.w] = matTr(empcov %*% siginv) - determinant(siginv, logarithm = T)$modulus + log(n) * no.edge/(2 * n)
       df[loop.lambda, loop.w] = no.edge
     }
   }

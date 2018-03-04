@@ -6,7 +6,7 @@ function(x, y, lambda){
     beta = rep(1, p)
   } else {
     if(ncol(x) > 1){		## use glmnet
-      fit = glmnet(x, y, family="gaussian", alpha=1, lambda=lambda)
+      fit = glmnet::glmnet(x, y, family="gaussian", alpha=1, lambda=lambda)
       beta = as.matrix(fit$beta)
     }else{				    ## use soft thresholding
       beta = lm(y~x)$coef[2]

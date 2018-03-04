@@ -16,7 +16,7 @@ function(x0, D, r, control = NULL) {
     }
     
     ncond = length(D)
-    if (ncond==1){stop("Only one condition detected!")}
+   # if (ncond==1){stop("Only one condition detected!")}
     
     p = dim(D[[1]])[1]
     Ip = diag(rep(1, p), p, p)

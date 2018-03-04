@@ -1,7 +1,8 @@
 netEst.dir <-
-function(X, zero=NULL, one=NULL, lambda = NULL, verbose=FALSE, eps=1e-08) {
-  n = dim(X)[1]
-  p = dim(X)[2]
+function(x, zero=NULL, one=NULL, lambda = NULL, verbose=FALSE, eps=1e-08) {
+  p <- nrow(x)
+  n <- ncol(x)
+  
   Adj = matrix(0, p, p)
   Ip = diag(rep(1, p))
   
@@ -16,6 +17,9 @@ function(X, zero=NULL, one=NULL, lambda = NULL, verbose=FALSE, eps=1e-08) {
   if (sum(one*zero) > 0){
     stop("Information on 0's and 1's overlaps!")
   }  
+  if (n<10){
+    warning("The sample size is too small! Network estimate may be unreliable!")
+  }
   if (is.null(lambda)){
     lambda = rep(0, p)
     alpha = 0.25
@@ -31,6 +35,7 @@ function(X, zero=NULL, one=NULL, lambda = NULL, verbose=FALSE, eps=1e-08) {
   }
   
   ## To get the empirical correlation matrix 
+  X <- t(x)
   X = scale(X, center=TRUE, scale=TRUE)
   for (i in 2:p) {
     Y = matrix(X[, i], ncol=1)
@@ -101,6 +106,8 @@ function(X, zero=NULL, one=NULL, lambda = NULL, verbose=FALSE, eps=1e-08) {
   
   infmat = solve(Ip - Adj)
   infmat[abs(infmat) < eps] <- 0
+  rownames(Adj) = rownames(x);
+  colnames(Adj) = rownames(x);
   
   return(list(Adj=Adj, infmat=infmat, lambda=lambda))
 }
