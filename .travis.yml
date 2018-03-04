@@ -3,8 +3,19 @@
 language: R
 sudo: false
 cache: packages
-r: bioc-release
+r: 
+  - bioc-release
+  - oldrel
+  - release
+  - devel
 use_bioc: true
+r_packages:
+   - corpcor
+   - devtools
+   - glmnet
+   - igraph
+   - Matrix
+   - quadprog
 bioc_packages: 
    - graphite 
    - graph
