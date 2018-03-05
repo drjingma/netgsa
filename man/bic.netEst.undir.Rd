@@ -65,13 +65,15 @@ if (sum(is.na(rownames(sx)))>0){
 }
 file_e <- paste0(path.package("netgsa"), "/doc/edgelist.txt")
 out <- prepareAdjacencyMatrix(sx, group, pathways,FALSE,file_e, NULL)
+sx <- sx[match(colnames(out$B), rownames(sx)),]
+
 ncond <- length(unique(group))
 Amat <- vector("list",ncond)
 for (k in 1:ncond){
   data_c <- sx[,(group==k)]
-  fitBIC <- bic.netEst.undir(data_c,one=out$Adj,zero=out$Zero_Adj,
+  fitBIC <- bic.netEst.undir(data_c,one=out$Adj,
                              lambda=seq(1,10)*sqrt(log(p)/ncol(data_c)),eta=0.1)
-  fit <- netEst.undir(data_c,one=out$Adj,zero=out$Zero_Adj,
+  fit <- netEst.undir(data_c,one=out$Adj,
                       lambda=which.min(fitBIC$BIC)*sqrt(log(p)/ncol(data_c)),eta=0.1)
   Amat[[k]] <- fit$Adj
 }

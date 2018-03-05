@@ -1,21 +1,12 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: R
-sudo: false
+sudo: required
+dist: precise
 cache: packages
 r: 
   - bioc-release
-  - oldrel
-  - release
-  - devel
 use_bioc: true
-r_packages:
-   - corpcor
-   - devtools
-   - glmnet
-   - igraph
-   - Matrix
-   - quadprog
 bioc_packages: 
    - graphite 
    - graph
