@@ -48,11 +48,10 @@ NetGSA works directly with the expression data matrix. When loading the data, it
 
 ```{r data}
 load("breastcancer2012.rda")
-# data("breastcancer2012.rda")
 ls()
 ```
 
-```{r include=FALSE}
+```{r label, include=FALSE}
 label_A <- 'A'
 label_edgelist <- 'edgelist'
 label_group <- 'group'
@@ -89,28 +88,7 @@ library(glmnet)
 library(graphite)
 library(igraph)
 library(MSigDB) 
-# library(netgsa)
-source("../R/adj2inf.R")
-source("../R/approxVarEst.R")
-source("../R/bic.netEst.undir.R")
-source("../R/call.netgsa.R")
-source("../R/get.contrast.R")
-source("../R/glmnet.soft.R")
-source("../R/graphlaplacian.R")
-source("../R/he_method.R")
-source("../R/matTr.R")
-source("../R/netEst.dir.R")
-source("../R/netEst.undir.R")
-source("../R/netgsa.ftest.R")
-source("../R/netgsa.onesample.R")
-source("../R/NetGSA.R")
-source("../R/netgsa.ttest.R")
-source("../R/newton.R")
-source("../R/normalizeAdj.R")
-source("../R/prepareAdjacencyMatrix.R")
-source("../R/preparePathways.R")
-source("../R/profile.newton.se.R")
-source("../R/zeroInd.R")
+library(netgsa)
 ```
 
 We consider pathways from KEGG [@kanehisa2000kegg]. KEGG pathways can be accessed in R using the **graphite** package. 
@@ -180,7 +158,7 @@ for (k in 1:ncond){
 ```
 
 Given the networks, one can test for pathway enrichment as follows:
-```{r netgsa}
+```{r netgsa 1}
 test1 <- NetGSA(Amat, sx, group, pathways = sout$B, lklMethod = 'REHE')
 head(test1$results)
 ```

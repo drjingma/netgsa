@@ -46,12 +46,8 @@ Jing Ma
 \code{\link{netEst.undir}}
 }
 \examples{
-library(devtools)
-devtools::install_github("JClavel/glassoFast")
 
 library(glassoFast)
-library(graph)
-library(graphite)
 library(igraph)
 
 set.seed(1)
@@ -67,7 +63,7 @@ if (sum(is.na(rownames(sx)))>0){
   sx <- sx[-which(is.na(rownames(sx))),]
 }
 file_e <- paste0(path.package("netgsa"), "/doc/edgelist.txt")
-out <- prepareAdjacencyMatrix(sx, group, pathways,FALSE,file_e, NULL)
+out <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, file_e, NULL)
 sx <- sx[match(colnames(out$B), rownames(sx)),]
 
 ncond <- length(unique(group))

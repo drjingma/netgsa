@@ -54,7 +54,6 @@ Ali Shojaie
 }
 \examples{
 library(glmnet)
-library(graph)
 library(graphite)
 library(igraph)
 

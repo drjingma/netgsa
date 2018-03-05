@@ -32,8 +32,8 @@ Jing Ma (jingma@fredhutch.org)
 \code{\link{NetGSA}}, \code{\link{prepareAdjacencyMatrix}}
 }
 \examples{
-library(graphite)
+#library(graphite)
 
-pathwayList <- preparePathways('kegg')
-pathwayList[[1]]
+#pathwayList <- preparePathways('kegg')
+#pathwayList[[1]]
 }

@@ -48,12 +48,7 @@ Jing Ma
 \code{\link{NetGSA}}, \code{\link{netEst.dir}}, \code{\link{netEst.undir}}
 }
 \examples{
-library(devtools)
-devtools::install_github("JClavel/glassoFast")
-
 library(glassoFast)
-library(graph)
-library(graphite)
 library(igraph)
 
 set.seed(1)
@@ -70,7 +65,7 @@ if (sum(is.na(rownames(sx)))>0){
 }
 # compare the resulting matrices when file_ne=NULL vs file_ne=NA
 file_e <- paste0(path.package("netgsa"), "/doc/edgelist.txt")
-out1 <- prepareAdjacencyMatrix(sx, group, pathways,FALSE,file_e, NULL)
-out2 <- prepareAdjacencyMatrix(sx, group, pathways,FALSE,file_e, NA)
+out1 <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, file_e, NULL)
+out2 <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, file_e, NA)
 
 }
