@@ -2,7 +2,7 @@
 
 language: R
 sudo: false
-dist: precise
+dist: trusty
 cache: packages
 r: 
   - bioc-release
