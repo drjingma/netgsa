@@ -48,7 +48,10 @@ Jing Ma
 \code{\link{NetGSA}}, \code{\link{netEst.dir}}, \code{\link{netEst.undir}}
 }
 \examples{
-require(glassoFast)
+library(devtools)
+devtools::install_github("JClavel/glassoFast")
+
+library(glassoFast)
 library(graph)
 library(graphite)
 library(igraph)

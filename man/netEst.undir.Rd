@@ -54,7 +54,10 @@ Jing Ma
 \code{\link{prepareAdjacencyMatrix}}, \code{\link{bic.netEst.undir}}, \code{\link{glmnet}}
 }
 \examples{
-require(glassoFast)
+library(devtools)
+devtools::install_github("JClavel/glassoFast")
+
+library(glassoFast)
 library(graph)
 library(graphite)
 library(igraph)

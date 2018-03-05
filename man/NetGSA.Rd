@@ -59,7 +59,10 @@ Ali Shojaie and Jing Ma
 \code{\link{prepareAdjacencyMatrix}}, \code{\link{netEst.dir}}, \code{\link{netEst.undir}}
 }
 \examples{
-require(glassoFast)
+library(devtools)
+devtools::install_github("JClavel/glassoFast")
+
+library(glassoFast)
 library(glmnet)
 library(graph)
 library(graphite)
