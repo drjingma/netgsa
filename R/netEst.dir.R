@@ -33,11 +33,8 @@ function(x, zero=NULL, one=NULL, lambda = NULL, verbose=FALSE, eps=1e-08) {
     warning("The sample size is too small! Network estimate may be unreliable!")
   }
   if (is.null(lambda)){
-    lambda = rep(0, p)
     alpha = 0.25
-    for (i in 2:p){
-      lambda[i] = 2 * qnorm(1-alpha/(2*p*(i-1))) /sqrt(n)
-    }
+    lambda = 2 * qnorm(1-alpha/(2*p* seq(1,p-1) )) /sqrt(n)
   } else if (length(lambda)==1){
     lambda = c(0, rep(lambda, p-1))
   } else if (length(lambda) == p-1){
