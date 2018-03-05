@@ -112,6 +112,8 @@ genenames <- intersect(nodes(pg), rownames(x))
 p <- length(genenames)
 gx <- x[match(genenames,rownames(x)),]
 
+print(p)
+
 # extract the subgraph
 g <- subGraph(genenames, pg)
 g <- igraph.from.graphNEL(g)
@@ -125,6 +127,12 @@ B <- matrix(rep(1,p),nrow=1)
 rownames(B) <- "Adrenergic signaling in cardiomyocytes"
 colnames(B) <- rownames(Adj)
 gx <- gx[match(rownames(Adj),rownames(gx)),]
+
+print(dim(gx))
+
+print(dim(Adj))
+
+print(identical(rownames(Adj), rownames(Adj)))
 
 Amat <- vector("list", 2)
 for (k in 1:2){
