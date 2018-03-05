@@ -29,6 +29,7 @@ We first load necessary R/Bioconductor packages. Additional packages such as **M
 ```{r package, eval=FALSE}
 # source("http://bioconductor.org/biocLite.R")
 # biocLite(c("graphite"))
+library(devtools)
 devtools::install_github('oganm/MSigDB')
 devtools::install_github("JClavel/glassoFast")
 
@@ -79,6 +80,10 @@ head(edgelist)
 
 ### Step 2: pathway enrichment analysis
 ```{r packages, include=FALSE}
+library(devtools)
+devtools::install_github('oganm/MSigDB')
+devtools::install_github("JClavel/glassoFast")
+
 library(glassoFast)
 library(glmnet)
 library(graphite)
