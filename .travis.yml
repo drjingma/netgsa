@@ -11,8 +11,8 @@ bioc_packages:
    - graphite 
    - graph
 r_github_packages: 
-   - JClavel/glassoFast
-   - oganm/MSigDB
+   - JClavel/devtools#936
+   - oganm/devtools#936
 script:
    - R CMD build . --no-resave-data 
    - R CMD check *tar.gz --as-cran  
