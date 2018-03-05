@@ -54,7 +54,7 @@ Jing Ma
 \code{\link{prepareAdjacencyMatrix}}, \code{\link{bic.netEst.undir}}, \code{\link{glmnet}}
 }
 \examples{
-library(glassoFast)
+require(glassoFast)
 library(graph)
 library(graphite)
 library(igraph)

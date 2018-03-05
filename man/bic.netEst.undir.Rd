@@ -46,7 +46,7 @@ Jing Ma
 \code{\link{netEst.undir}}
 }
 \examples{
-library(glassoFast)
+require(glassoFast)
 library(graph)
 library(graphite)
 library(igraph)

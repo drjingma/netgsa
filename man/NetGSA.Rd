@@ -59,7 +59,7 @@ Ali Shojaie and Jing Ma
 \code{\link{prepareAdjacencyMatrix}}, \code{\link{netEst.dir}}, \code{\link{netEst.undir}}
 }
 \examples{
-library(glassoFast)
+require(glassoFast)
 library(glmnet)
 library(graph)
 library(graphite)
