@@ -126,7 +126,7 @@ rownames(B) <- "Adrenergic signaling in cardiomyocytes"
 colnames(B) <- rownames(Adj)
 gx <- gx[match(rownames(Adj),rownames(gx)),]
 
-Amat <- vector("list", ncond)
+Amat <- vector("list", 2)
 for (k in 1:2){
   data_c <- gx[,which(group==k)]
   Amat[[k]] <- netEst.dir(data_c, one = Adj)$Adj
