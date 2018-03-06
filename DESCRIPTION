@@ -7,11 +7,20 @@ Author: Jing Ma, Ali Shojaie and Kun Yue
 Maintainer: Jing Ma <jingma@fredhutch.org>
 Description: Carry out Network-based Gene Set Analysis by incorporating external information about interactions among genes, as well as novel interactions learned from data.
 Depends: R (>= 3.0.1)
-Imports: corpcor, glmnet, graph, igraph, Matrix, quadprog,
+Imports: glmnet, 
+    graph, 
+    igraph, 
+    Matrix, 
     glassoFast,
     MSigDB
 Remotes: JClavel/glassoFast, oganm/MSigDB
-Suggests: devtools, graphite, knitr, MASS, testthat, rmarkdown
+Suggests: corpcor,
+    devtools, 
+    graphite, 
+    knitr, 
+    MASS, 
+    quadprog,
+    rmarkdown
 License: GPL (>=2)
 LazyLoad: yes
 LazyData: true
