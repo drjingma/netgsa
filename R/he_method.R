@@ -47,7 +47,7 @@ he_method = function(n, D, DtD, resid, control=NULL){
       s2e = ifelse(res[1]<0, 0, res[1])
       s2g = ifelse(res[-1]<0, 0, res[-1])
     } else if (lklMethod == 'REHE'){
-      res_qp = quadprog::solve.QP(Dmat = XTX, dvec=XTY, Amat = diag(1,ncond), bvec = rep(0, ncond), meq=0, factorized=FALSE)
+      res_qp = solve.QP(Dmat = XTX, dvec=XTY, Amat = diag(1,ncond), bvec = rep(0, ncond), meq=0, factorized=FALSE)
       s2e = res_qp$solution[1]
       s2g = res_qp$solution[-1]
     }
@@ -110,7 +110,7 @@ he_method = function(n, D, DtD, resid, control=NULL){
       s2e = ifelse(res[1]<0, 0, res[1])
       s2g = ifelse(res[-1]<0, 0, res[-1])
     } else if (lklMethod == 'REHE'){
-      res_qp = quadprog::solve.QP(Dmat = XTX, dvec=XTY, Amat = diag(1,ncond), bvec = rep(0, ncond), meq=0, factorized=FALSE)
+      res_qp = solve.QP(Dmat = XTX, dvec=XTY, Amat = diag(1,ncond), bvec = rep(0, ncond), meq=0, factorized=FALSE)
       s2e = res_qp$solution[1]
       s2g = res_qp$solution[-1]
     }

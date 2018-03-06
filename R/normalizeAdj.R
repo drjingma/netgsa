@@ -21,7 +21,7 @@ function(Amat, alpha = 1) {
       LapMat[[i]] = LapResults$Lnorm
       Lmat[[i]] = LapResults$Lunnorm
       normA[[i]] = alpha * LapMat[[i]]
-      InfMat[[i]] = t(chol(corpcor::pseudoinverse(Ip - normA[[i]]))) 
+      InfMat[[i]] = t(chol(pseudoinverse(Ip - normA[[i]]))) 
     }
     
     return(list(normA = normA, Lmat = Lmat, LapMat = LapMat, InfMat = InfMat))

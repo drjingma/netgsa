@@ -94,7 +94,7 @@ NetGSA <-
     } else {
       #Undirected gaussian graphical model
       Ip <- diag( rep(1,p_c) )
-      D <- lapply(A_c, function(m) t(chol(corpcor::pseudoinverse(Ip - m)))) 
+      D <- lapply(A_c, function(m) t(chol(pseudoinverse(Ip - m)))) 
     }
     output <- call.netgsa(D, x_c, group, pathways, varEstCntrl)
     
