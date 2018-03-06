@@ -9,7 +9,6 @@ r:
 use_bioc: true
 bioc_packages: 
    - graphite 
-   - graph
 r_github_packages: 
    - JClavel/glassoFast
    - oganm/MSigDB
