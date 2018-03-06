@@ -62,7 +62,6 @@ Ali Shojaie and Jing Ma
 library(glassoFast)
 library(glmnet)
 library(igraph)
-library(quadprog)
 
 set.seed(1)
 data(breastcancer2012)
