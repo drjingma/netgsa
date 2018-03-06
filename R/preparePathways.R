@@ -20,7 +20,7 @@ preparePathways <-
     } else {
       ## these gene sets are defined based on gene symbols;
       path.id <- grep(m.type,names(MSigDB))
-      genesets <- MSigDB[[path.id]] 
+      genesets <- MSigDB::MSigDB[[path.id]] 
     }
     
     return(genesets)
