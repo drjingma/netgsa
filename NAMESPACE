@@ -10,3 +10,4 @@ importFrom("stats", "coef", "cov", "lm", "p.adjust", "pf", "pt",
 importFrom("utils", "read.csv")
 importFrom("quadprog","solve.QP")
 importFrom("corpcor", "pseudoinverse")
+importFrom("MSigDB", "MSigDB")
