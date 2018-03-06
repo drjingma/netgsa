@@ -4,7 +4,7 @@ export(NetGSA,
        netEst.dir,
        netEst.undir,
        bic.netEst.undir)
-import(corpcor, glmnet, graph, igraph, Matrix, quadprog)
+import(corpcor, glassoFast, glmnet, graph, igraph, Matrix, MSigDB, quadprog)
 importFrom("stats", "coef", "cov", "lm", "p.adjust", "pf", "pt", 
            "qnorm", "residuals", "sd")
 importFrom("utils", "read.csv")
