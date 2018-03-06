@@ -11,10 +11,10 @@ Imports: corpcor, glmnet, graph, igraph, Matrix, quadprog,
     glassoFast,
     MSigDB
 Remotes: JClavel/glassoFast, oganm/MSigDB
-Suggests: devtools, graphite, knitr, MASS, testthat, 
+Suggests: devtools, graphite, knitr, MASS, testthat, rmarkdown
 License: GPL (>=2)
 LazyLoad: yes
 LazyData: true
 VignetteBuilder: knitr
-URL: https://doi.org/10.1093/bioinformatics/btw410
+URL: https://github.com/drjingma/netgsa
 RoxygenNote: 6.0.1
