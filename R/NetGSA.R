@@ -63,7 +63,7 @@ NetGSA <-
     ##Determine whether the network is DAG
     ##Assume A_c[[1]] and A_c[[2]] are of the same type (directed or undirected)
     isNetDAG <- FALSE
-    gA <- igraph::graph_from_adjacency_matrix(A_c[[1]], mode="directed")
+    gA <- igraph::graph_from_adjacency_matrix((abs(A_c[[1]])>1e-06), mode="directed")
     isNetDAG <- is_dag(gA)
     
     p_c <- p
@@ -94,7 +94,7 @@ NetGSA <-
     } else {
       #Undirected gaussian graphical model
       Ip <- diag( rep(1,p_c) )
-      D <- lapply(A_c, function(m) t(chol(solve(Ip - m)))) 
+      D <- lapply(A_c, function(m) t(chol(corpcor::pseudoinverse(Ip - m)))) 
     }
     output <- call.netgsa(D, x_c, group, pathways, varEstCntrl)
     
