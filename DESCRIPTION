@@ -1,24 +1,22 @@
 Package: netgsa
 Type: Package
 Title: Network-Based Gene Set Analysis
-Version: 3.0.1
-Date: 2018-03-01
+Version: 3.1
+Date: 2019-03-12
 Author: Jing Ma, Ali Shojaie and Kun Yue
 Maintainer: Jing Ma <jingma@fredhutch.org>
 Description: Carry out Network-based Gene Set Analysis by incorporating external information about interactions among genes, as well as novel interactions learned from data.
-Depends: R (>= 3.0.1)
-Imports: corpcor,quadprog,glmnet, 
-    graph, 
+Depends: R (>= 3.2.1)
+Imports: corpcor, 
+    dplyr,
+    glmnet, 
+    glassoFast,
+    graph,graphite,
     igraph, 
     Matrix, 
-    glassoFast,
-    MSigDB
-Remotes: JClavel/glassoFast, oganm/MSigDB
-Suggests: devtools, 
-    graphite, 
-    knitr, 
-    MASS, 
-    rmarkdown
+    msigdbr,
+    quadprog
+Suggests: knitr, MASS, rmarkdown
 License: GPL (>=2)
 LazyLoad: yes
 LazyData: true
