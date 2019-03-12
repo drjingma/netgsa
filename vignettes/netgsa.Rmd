@@ -24,19 +24,13 @@ In this vignette, we demonstrate the NetGSA workflow using a breast cancer data 
 Our example data set comes from a breast cancer study [@cancer2012comprehensive], which consists of gene expression data from 520 subjects including 117 estrogen-receptor-negative (ER-) and 403 estrogen-receptor-positive (ER+). The goal is to generate a diagnostic pathway signatures that could distinguish patients with different ER statuses by comparing gene expression data from the two classes. These signatures could provide additional clinical benefit in diagnosing breast cancer.
 
 ## Preparation
-We first load necessary R/Bioconductor packages. Additional packages such as **MSigDB** are useful if you would like to import pathways from [MSigDB](http://software.broadinstitute.org/gsea/msigdb). 
+We first load necessary R/Bioconductor packages. Additional packages such as **msigdbr** are useful if you would like to import pathways from [MSigDB](http://software.broadinstitute.org/gsea/msigdb). 
 
 ```{r package, eval=FALSE}
-# source("http://bioconductor.org/biocLite.R")
-# biocLite(c("graphite"))
-library(devtools)
-devtools::install_github('oganm/MSigDB')
-devtools::install_github("JClavel/glassoFast")
-
 library(glassoFast)
 library(graphite)
 library(igraph)
-library(MSigDB) 
+library(msigdbr) 
 library(netgsa)
 library(Rgraphviz)
 ```
@@ -79,15 +73,11 @@ head(edgelist)
 
 ### Enrichment analysis with undirected networks
 ```{r packages, include=FALSE}
-library(devtools)
-devtools::install_github('oganm/MSigDB')
-devtools::install_github("JClavel/glassoFast")
-
 library(glassoFast)
 library(glmnet)
 library(graphite)
 library(igraph)
-library(MSigDB) 
+library(msigdbr) 
 library(netgsa)
 ```
 

@@ -20,7 +20,7 @@ prepareAdjacencyMatrix(x, group, pathways, import_from_kegg=FALSE,
   \item{lambda_c}{(Non-negative) a constant multiplied to the tuning parameter \code{lambda} needed for estimating the edge weights. By default, \code{lambda_c} is set to 1. See \code{\link{netEst.undir}} and \code{\link{netEst.dir}} for more details.}
   \item{eta}{(Non-negative) a small constant needed for estimating the edge weights. By default, \code{eta} is set to 0.5. See \code{\link{netEst.undir}} for more details.}
   \item{minsize}{Minimum number of genes in pathways to be considered.}
-  \item{fileEncoding}{Character string: if non-empty declares the encoding used on a file (not a connection) so the character data can be re-encoded. See the ‘Encoding’ section of the help for \href{http://127.0.0.1:25551/help/library/utils/help/file}{file}, the ‘R Data Import/Export Manual’ and ‘Note’.}
+  \item{fileEncoding}{Character string: if non-empty declares the encoding used on a file (not a connection) so the character data can be re-encoded. See the 'Encoding' section of the help for \href{https://stat.ethz.ch/R-manual/R-devel/library/base/html/connections.html}{file}, and 'R Data Import/Export Manual'.}
 }
 \details{
 The function \code{prepareAdjacencyMatrix} accepts both network information from user specified sources and KEGG, and return 0-1 adjacency matrices needed for \code{\link{netEst.undir}} and \code{\link{netEst.dir}}. If \code{estimate_network=TRUE}, the function also returns a list of weighted adjacency matrices that can be directly used in \code{NetGSA}. Note if the dimension of the problem, or equivalently the total number of unique genes across all pathways, is large, \code{prepareAdjacencyMatrix} with \code{estimate_network=TRUE} may be a bit slow.
@@ -39,7 +39,7 @@ A list with components
 \item{B}{The npath by \eqn{p} indicator matrix for pathways.}
 }
 \references{
-Ma, J., Shojaie, A. & Michailidis, G. (2016) Network-based pathway enrichment analysis with incomplete network information. Bioinformatics 32(20):165--3174. \url{https://doi.org/10.1093/bioinformatics/btw410}
+Ma, J., Shojaie, A. & Michailidis, G. (2016) Network-based pathway enrichment analysis with incomplete network information. Bioinformatics 32(20):165--3174. 
 }
 \author{
 Jing Ma

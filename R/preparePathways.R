@@ -17,10 +17,17 @@ preparePathways <-
         paths<- lapply(paths, function(p) graphite::convertIdentifiers(p,g.id))
       }
       genesets <- lapply(paths, nodes)
+      genesets <- lapply(genesets, function(a) gsub("ENTREZID:","",a))
     } else {
-      ## these gene sets are defined based on gene symbols;
-      path.id <- grep(m.type,names(MSigDB))
-      genesets <- MSigDB::MSigDB[[path.id]] 
+      m_df = msigdbr(species = "Homo sapiens", category = m.type)
+      m_t2g = m_df %>% dplyr::select(gs_name, entrez_gene) %>% as.data.frame()
+      if (g.id=="symbol"){
+        m_t2g = m_df %>% dplyr::select(gs_name, gene_symbol) %>% as.data.frame()
+      }
+      gs_df <- m_t2g %>% dplyr::group_by(gs_name) %>% 
+        dplyr::summarise(entrez_gene = paste0(entrez_gene, collapse=","))
+      genesets <- lapply(gs_df$entrez_gene, function(s) unlist(strsplit(s,",")))
+      names(genesets) <- gs_df$gs_name
     }
     
     return(genesets)
