@@ -10,8 +10,6 @@ use_bioc: true
 bioc_packages: 
    - graphite 
 r_github_packages: 
-   - JClavel/glassoFast
-   - oganm/MSigDB
 script:
    - R CMD build . --resave-data 
    - R CMD check *tar.gz --as-cran  
