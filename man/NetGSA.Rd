@@ -27,7 +27,7 @@ The NetGSA method is formulated in terms of a mixed linear model. Let \eqn{X} re
 \deqn{X=\Psi \beta + \Pi \gamma + \epsilon}
 where \eqn{\beta} is the vector of fixed effects, \eqn{\gamma} and \eqn{\epsilon} are random effects and random errors, respectively. The underlying biological networks are encoded in the weighted adjacency matrices, which determine the influence matrix under each condition. The influence matrices further determine the design matrices \eqn{\Psi} and \eqn{\Pi} in the mixed linear model. Formally, the influence matrix under each condition represents the effect of each gene on all the other genes in the network and is calculated from the adjacency matrix (\code{A[[k]]} for the \eqn{k}-th condition). A small value of \code{eta} is used to make sure that the influence matrices are well-conditioned (i.e. their condition numbers are bounded by \code{lim4kappa}.)
 
-The problem is then to test the null hypothesis \eqn{\ell\beta = 0}{l\beta = 0} against the alterernative \eqn{\ell\beta \neq 0}{l\beta != 0}, where \eqn{\ell}{l} is a contrast vector, optimally defined through the underlying networks. 
+The problem is then to test the null hypothesis \eqn{\ell\beta = 0}{l\beta = 0} against the alternative \eqn{\ell\beta \neq 0}{l\beta != 0}, where \eqn{\ell}{l} is a contrast vector, optimally defined through the underlying networks. 
 For a one-sample or two-sample test, the test statistic \eqn{T} for each gene set has approximately a t-distribution under the null, whose degrees of freedom are estimated using the Satterthwaite approximation method. When analyzing complex experiments involving multiple conditions, often multiple contrast vectors of interest are considered for a specific subnetwork. Alternatively, one can combine the contrast vectors into a contrast matrix \eqn{L}. A different test statistic \eqn{F} will be used. Under the null, \eqn{F} has an F-distribution, whose degrees of freedom are calculated based on the contrast matrix \eqn{L} as well as variances of \eqn{\gamma} and \eqn{\epsilon}. The fixed effects \eqn{\beta} are estimated by generalized least squares, and the estimate depends on estimated variance components of \eqn{\gamma} and \eqn{\epsilon}. 
 
 Estimation of the variance components (\eqn{\sigma^2_{\epsilon}} and \eqn{\sigma^2_{\gamma}}) can be done in several different ways after profiling out \eqn{\sigma^2_{\epsilon}}, including \code{REML/ML} which uses Newton's method or \code{HE/REHE} which is based on the Haseman-Elston regression method. The latter notes the fact that \eqn{Var(X)=\sigma^2_{\gamma}\Pi*\Pi' + \sigma^2_{\epsilon}I}, and uses an ordinary least squares to solve for the unknown coefficients after vectorizing both sides. In particular, \code{REHE} uses nonnegative least squares for the regression and therefore ensures nonnegative estimate of the variance components. Due to the simple formulation, \code{HE/REHE} also allows subsampling with respect to both the samples and the variables, and is recommended especially when the problem is large (i.e. large \eqn{p} and/or large \eqn{n}).
@@ -40,7 +40,7 @@ In either case, the user can still apply \code{NetGSA} if only partial informati
 \value{
 A list with components
 \item{results}{A data frame with pathway names, pathway sizes, p-values and false discovery rate corrected q-values for all pathways.}
-\item{beta}{Vector of fixed effects of length \eqn{2p}, of which the first half is for condition 1 and the second half for conditin 2.}
+\item{beta}{Vector of fixed effects of length \eqn{2p}, of which the first half is for condition 1 and the second half for condition 2.}
 \item{s2.epsilon}{Variance of the random errors \eqn{\epsilon}.}
 \item{s2.gamma}{Variance of the random effects \eqn{\gamma}.}
 }
@@ -75,21 +75,23 @@ sx <- x[match(genenames, rownames(x)),]
 if (sum(is.na(rownames(sx)))>0){
   sx <- sx[-which(is.na(rownames(sx))),]
 }
-file_e <- paste0(path.package("netgsa"), "/doc/edgelist.txt")
+file_e <- system.file("extdata", "edgelist.txt", package = "netgsa")
 out <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, file_e, NULL)
 sx <- sx[match(colnames(out$B), rownames(sx)),]
 
 ncond <- length(unique(group))
 Amat <- vector("list",ncond)
-for (k in 1:ncond){
-  data_c <- sx[,(group==k)]
-  fitBIC <- bic.netEst.undir(data_c,one=out$Adj,
-                             lambda=seq(1,10)*sqrt(log(p)/ncol(data_c)),eta=0.1)
-  fit <- netEst.undir(data_c,one=out$Adj,
-                      lambda=which.min(fitBIC$BIC)*sqrt(log(p)/ncol(data_c)),eta=0.1)
-  Amat[[k]] <- fit$Adj
-}
-test <- NetGSA(Amat, sx, group, pathways = out$B, lklMethod = 'REHE')
+
+## -- Not run --
+# for (k in 1:ncond){
+#  data_c <- sx[,(group==k)]
+#  fitBIC <- bic.netEst.undir(data_c,one=out$Adj,
+#                             lambda=seq(1,10)*sqrt(log(p)/ncol(data_c)),eta=0.1)
+#  fit <- netEst.undir(data_c,one=out$Adj,
+#                      lambda=which.min(fitBIC$BIC)*sqrt(log(p)/ncol(data_c)),eta=0.1)
+#  Amat[[k]] <- fit$Adj
+# }
+# test <- NetGSA(Amat, sx, group, pathways = out$B, lklMethod = 'REHE')
 
 ## -------------------Directed networks------------------
 ## NetGSA also works for directed acyclic graphs (DAGs).
@@ -110,10 +112,10 @@ colnames(B) <- rownames(Adj)
 gx <- x[match(rownames(Adj), rownames(x)),]
 
 Amat <- vector("list", 2)
-for (k in 1:2){
-  data_c <- gx[,which(group==k)]
-  Amat[[k]] <- netEst.dir(data_c, one = Adj)$Adj
-}
-test <- NetGSA(Amat, gx, group, pathways = B, lklMethod = 'REHE')
+# for (k in 1:2){
+#   data_c <- gx[,which(group==k)]
+#   Amat[[k]] <- netEst.dir(data_c, one = Adj)$Adj
+# }
+# test <- NetGSA(Amat, gx, group, pathways = B, lklMethod = 'REHE')
 
 }

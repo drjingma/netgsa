@@ -5,18 +5,18 @@
 Read the network information from KEGG or specified by the user and construct the adjacency matrices needed for NetGSA.
 }
 \usage{
-prepareAdjacencyMatrix(x, group, pathways, import_from_kegg=FALSE, 
+prepareAdjacencyMatrix(x, group, pways, import_from_kegg=FALSE, 
        file_e=c(NA, file_e), file_ne=c(NULL, file_ne, NA), 
        estimate_network=FALSE, lambda_c=1, eta=0.5, minsize=5, fileEncoding="")
 }
 \arguments{
   \item{x}{The \eqn{p \times n}{p x n} data matrix with rows referring to genes and columns to samples.}
   \item{group}{Vector of class indicators of length \eqn{n}.}
-  \item{pathways}{A list of pathways from \code{preparePathways}.}
+  \item{pways}{A list of pathways from \code{preparePathways}.}
   \item{import_from_kegg}{(Logical) whether to import network information from KEGG. }
   \item{file_e}{The name of the file which the list of edges is to read from. This should be a .txt file, with one edge in a line, the two vertices separated by a delimiter. The third column indicates the direction of the edge: directed or undirected.}
   \item{file_ne}{The name of the file which the list of negative edges is to read from. The edges in this file are negative in the sense that the corresponding vertices are not connected. This should be a .txt file, with one negative edge in a line, the two vertices separated by a delimiter. The third column indicates the direction of the negative edge: directed or undirected. If \code{NA}, the input edge list from \code{file_e} will be treated as complete network information and edge weights will be estimated only for the input edge list. If \code{NULL}, the input edge list from \code{file_e} will be treated as partial information and a network estimation procedure will be used to refit the network topology and edge weights. See details.}
-  \item{estimate_network}{(Logical) whether to estimate the weighted adjacency matrices. Default is \code{FALSE}. Users are recommended to use the returned 0-1 adjacnecy matrix and the function \code{\link{netEst.undir}} and \code{\link{netEst.dir}} to estimate the weighted adjacency matrices.}
+  \item{estimate_network}{(Logical) whether to estimate the weighted adjacency matrices. Default is \code{FALSE}. Users are recommended to use the returned 0-1 adjacency matrix and the function \code{\link{netEst.undir}} and \code{\link{netEst.dir}} to estimate the weighted adjacency matrices.}
   \item{lambda_c}{(Non-negative) a constant multiplied to the tuning parameter \code{lambda} needed for estimating the edge weights. By default, \code{lambda_c} is set to 1. See \code{\link{netEst.undir}} and \code{\link{netEst.dir}} for more details.}
   \item{eta}{(Non-negative) a small constant needed for estimating the edge weights. By default, \code{eta} is set to 0.5. See \code{\link{netEst.undir}} for more details.}
   \item{minsize}{Minimum number of genes in pathways to be considered.}
@@ -64,7 +64,7 @@ if (sum(is.na(rownames(sx)))>0){
   sx <- sx[-which(is.na(rownames(sx))),]
 }
 # compare the resulting matrices when file_ne=NULL vs file_ne=NA
-file_e <- paste0(path.package("netgsa"), "/doc/edgelist.txt")
+file_e <- system.file("extdata", "edgelist.txt", package = "netgsa")
 out1 <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, file_e, NULL)
 out2 <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, file_e, NA)
 
