@@ -4,9 +4,15 @@ export(NetGSA,
        netEst.dir,
        netEst.undir,
        bic.netEst.undir)
-import(glassoFast, glmnet, graph, igraph, Matrix, msigdbr)
+import(glassoFast, Matrix)
 importFrom("stats", "coef", "cov", "lm", "p.adjust", "pf", "pt", 
            "qnorm", "residuals", "sd")
 importFrom("utils", "read.csv")
 importFrom("quadprog","solve.QP")
 importFrom("corpcor", "pseudoinverse")
+importFrom("rlang",".data")
+importFrom("magrittr", "%>%")
+importFrom("graph","subGraph")
+importFrom("graph","nodes")
+importFrom("graphite", "pathwayGraph")
+importFrom("graphite", "convertIdentifiers")
