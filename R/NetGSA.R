@@ -56,7 +56,6 @@ NetGSA <-
     A_c <- A
     if (min(sapply(lapply(A_c, abs), sum))==0) {
       warning("No network interactions were found! Check your networks!")
-      next;
     }
     
     ##-----------------
@@ -64,7 +63,7 @@ NetGSA <-
     ##Assume A_c[[1]] and A_c[[2]] are of the same type (directed or undirected)
     isNetDAG <- FALSE
     gA <- igraph::graph_from_adjacency_matrix((abs(A_c[[1]])>1e-06), mode="directed")
-    isNetDAG <- is_dag(gA)
+    isNetDAG <- igraph::is_dag(gA)
     
     p_c <- p
     x_c <- x[match(rownames(A_c[[1]]),rownames(x)),]

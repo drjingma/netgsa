@@ -14,18 +14,18 @@ preparePathways <-
     if (db=="kegg"){
       paths <- graphite::pathways('hsapiens','kegg')
       if (g.id=="symbol"){
-        paths<- lapply(paths, function(p) graphite::convertIdentifiers(p,g.id))
+        paths<- lapply(paths, function(p) convertIdentifiers(p,g.id))
       }
       genesets <- lapply(paths, nodes)
       genesets <- lapply(genesets, function(a) gsub("ENTREZID:","",a))
     } else {
-      m_df = msigdbr(species = "Homo sapiens", category = m.type)
-      m_t2g = m_df %>% dplyr::select(gs_name, entrez_gene) %>% as.data.frame()
+      m_df = msigdbr::msigdbr(species = "Homo sapiens", category = m.type)
+      m_t2g = m_df %>% dplyr::select(.data$gs_name, .data$entrez_gene) %>% as.data.frame()
       if (g.id=="symbol"){
-        m_t2g = m_df %>% dplyr::select(gs_name, gene_symbol) %>% as.data.frame()
+        m_t2g = m_df %>% dplyr::select(.data$gs_name, .data$gene_symbol) %>% as.data.frame()
       }
-      gs_df <- m_t2g %>% dplyr::group_by(gs_name) %>% 
-        dplyr::summarise(entrez_gene = paste0(entrez_gene, collapse=","))
+      gs_df <- m_t2g %>% dplyr::group_by(.data$gs_name) %>% 
+        dplyr::summarise(entrez_gene = paste0(.data$entrez_gene, collapse=","))
       genesets <- lapply(gs_df$entrez_gene, function(s) unlist(strsplit(s,",")))
       names(genesets) <- gs_df$gs_name
     }
