@@ -8,7 +8,7 @@
 \tabular{ll}{
 Package: \tab netgsa\cr
 Type: \tab Package\cr
-Version: \tab 3.1\cr
+Version: \tab 3.1.0\cr
 Date: \tab 2019-03-12\cr
 License: \tab GPL (>=2)\cr
 }
