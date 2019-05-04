@@ -69,15 +69,15 @@ obtainEdgeList <- function(genes, databases){
     if(is.null(names(genes)) | any(names(genes) == "")) stop("Please select identfier type of all genes. You can do this by setting the name of each element to the identifier type of that gene")
     
     # Make sure their gene is gene type we know about
-    unconv_ids <- !names(genes) %in% c(names(metabolites), AnnotationDbi::keytypes(org.Hs.eg.db))
+    unconv_ids <- !names(genes) %in% c(names(metabolites), AnnotationDbi::keytypes(org.Hs.eg.db::org.Hs.eg.db))
     
     if(any(unconv_ids)) stop(paste0("Don't know how to convert ID type(s): ", paste(names(genes)[unconv_ids], collapse = ", ")))
   
     
     # All ID types are valid, drop duped IDs and make sure actual genes are valid for specific ID type
     genes_cl <- checkIDs(genes, metabolites)
-    conversion_type = ifelse(names(genes_cl) %in% names(metabolites),                      "graphite_metabolites",
-                      ifelse(names(genes_cl) %in% AnnotationDbi::keytypes(org.Hs.eg.db),   "org.Hs.eg.db", NA))
+    conversion_type = ifelse(names(genes_cl) %in% names(metabolites),                                    "graphite_metabolites",
+                      ifelse(names(genes_cl) %in% AnnotationDbi::keytypes(org.Hs.eg.db::org.Hs.eg.db),   "org.Hs.eg.db", NA))
     
     data.table(id_type = names(genes_cl), gene = genes_cl, conversion_type = conversion_type)
     
@@ -91,8 +91,8 @@ obtainEdgeList <- function(genes, databases){
   
     not_found_ids <- lapply(spl_genes, function(gene_subs, metabolites){
                                               id_type       <- names(gene_subs)[1]
-                                              valid_id_list <- if(      id_type %in% names(metabolites)    )                     metabolites[[id_type]]
-                                                               else if( id_type %in% AnnotationDbi::keytypes(org.Hs.eg.db))      AnnotationDbi::keys(org.Hs.eg.db, id_type)
+                                              valid_id_list <- if(      id_type %in% names(metabolites)    )                                   metabolites[[id_type]]
+                                                               else if( id_type %in% AnnotationDbi::keytypes(org.Hs.eg.db::org.Hs.eg.db))      AnnotationDbi::keys(org.Hs.eg.db::org.Hs.eg.db, id_type)
                                               
                                               not_found     <- gene_subs[! gene_subs %in% valid_id_list]
                                               if( length(not_found) == 0 )  return(NULL)
@@ -120,8 +120,8 @@ obtainEdgeList <- function(genes, databases){
     uniq_ids                   <- databases[, unique(c(src_type, dest_type))]
     
     # IDs are converted either with metabolites from graphite OR org.Hs.eg.db
-    metabolite_or_orgHsegdb_id <- ifelse(uniq_ids %in% AnnotationDbi::keytypes(org.Hs.eg.db), "org.Hs.eg.db",
-                                  ifelse(uniq_ids %in% names(metabolites),                    "metabolites", NA))
+    metabolite_or_orgHsegdb_id <- ifelse(uniq_ids %in% AnnotationDbi::keytypes(org.Hs.eg.db::org.Hs.eg.db), "org.Hs.eg.db",
+                                  ifelse(uniq_ids %in% names(metabolites),                                  "metabolites", NA))
     return(split(uniq_ids, metabolite_or_orgHsegdb_id))
   }
 
@@ -136,7 +136,7 @@ obtainEdgeList <- function(genes, databases){
     if(all(keytype == convert_to))                     return(data.table(base_gene = id_table[["gene"]], converted_gene = id_table[["gene"]], base_id = id_table[["id_type"]], converted_id = id_table[["id_type"]]))
     
     # We select c(keytype, convert_to) so that we can select base_id twice if its in list we want to convert to. This is possible b/c data.table allows duplicate column names
-    converted                                       <- setDT(AnnotationDbi::select(org.Hs.eg.db, keys = id_table[["gene"]], columns = convert_to, keytype = keytype))[, c(keytype, convert_to), with = FALSE]
+    converted                                       <- setDT(AnnotationDbi::select(org.Hs.eg.db::org.Hs.eg.db, keys = id_table[["gene"]], columns = convert_to, keytype = keytype))[, c(keytype, convert_to), with = FALSE]
     converted                                       <- unique(data.table::melt(converted, id.vars = keytype, variable.name = "converted_id", value.name = "converted_gene", variable.factor = FALSE, value.factor = FALSE, na.rm = TRUE))
     converted[, c("base_id")]                       <- keytype
     names(converted)[names(converted) == keytype]   <- "base_gene"
