@@ -42,6 +42,18 @@ NetGSA <-
       warning("The sample size is too small! Use NetGSA at your discretion!")
     }
     
+    #If any of these are out of order, reorder
+    outoforder <- vapply(A, function(Ai, data) { 
+                          if(!all(rownames(Ai) %in% rownames(data)))   stop("Adjacency matrices and data do not contain same list of genes")
+                          else if(all(rownames(Ai) == rownames(data))) return(FALSE)
+                          else                                         return(TRUE)
+                        }, FUN.VALUE = logical(1), data = x)
+    if(any(outoforder)){
+      order <- rownames(A[[1]])
+      A <- lapply(A, function(Ai) Ai[order, order])
+      x <- x[order,]
+    }
+    
     ##-----------------
     ##setting up control parameters for the var estimation procedures
     varEstCntrl = list(lklMethod = lklMethod,                    
