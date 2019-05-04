@@ -4,6 +4,7 @@ export(NetGSA,
        netEst.dir,
        netEst.undir,
        bic.netEst.undir)
+import(data.table)
 import(glassoFast, Matrix)
 importFrom("stats", "coef", "cov", "lm", "p.adjust", "pf", "pt", 
            "qnorm", "residuals", "sd")
