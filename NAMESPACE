@@ -1,5 +1,6 @@
 export(NetGSA,
        prepareAdjacencyMatrix,
+       prepareAdjacencyMatrixDB,
        preparePathways,
        netEst.dir,
        netEst.undir,
