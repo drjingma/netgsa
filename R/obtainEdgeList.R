@@ -69,15 +69,15 @@ obtainEdgeList <- function(genes, databases){
     if(is.null(names(genes)) | any(names(genes) == "")) stop("Please select identfier type of all genes. You can do this by setting the name of each element to the identifier type of that gene")
     
     # Make sure their gene is gene type we know about
-    unconv_ids <- !names(genes) %in% c(names(metabolites), keytypes(org.Hs.eg.db))
+    unconv_ids <- !names(genes) %in% c(names(metabolites), AnnotationDbi::keytypes(org.Hs.eg.db))
     
     if(any(unconv_ids)) stop(paste0("Don't know how to convert ID type(s): ", paste(names(genes)[unconv_ids], collapse = ", ")))
   
     
     # All ID types are valid, drop duped IDs and make sure actual genes are valid for specific ID type
     genes_cl <- checkIDs(genes, metabolites)
-    conversion_type = ifelse(names(genes_cl) %in% names(metabolites),       "graphite_metabolites",
-                      ifelse(names(genes_cl) %in% keytypes(org.Hs.eg.db),   "org.Hs.eg.db", NA))
+    conversion_type = ifelse(names(genes_cl) %in% names(metabolites),                      "graphite_metabolites",
+                      ifelse(names(genes_cl) %in% AnnotationDbi::keytypes(org.Hs.eg.db),   "org.Hs.eg.db", NA))
     
     data.table(id_type = names(genes_cl), gene = genes_cl, conversion_type = conversion_type)
     
