@@ -56,7 +56,7 @@ obtainEdgeList <- function(genes, databases){
                                                           " are not found within graphite. Please choose databases from graphite::pathwayDatabases()$databases"))
     
     db_stacked <- rbindlist(lapply(databases, function(db){
-                                              rbindlist(lapply(pathways("hsapiens", db), graphite::edges, which = "mixed", stringsAsFactors = FALSE), use.names = TRUE, idcol = "Pathway")}) 
+                                              rbindlist(lapply(graphite::pathways("hsapiens", db), graphite::edges, which = "mixed", stringsAsFactors = FALSE), use.names = TRUE, idcol = "Pathway")}) 
                             %>% setNames(., databases), use.names = TRUE, idcol = "database")
     return(unique(db_stacked[,.(database, src, src_type, dest, dest_type, direction)]))
   }
