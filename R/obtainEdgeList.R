@@ -91,8 +91,8 @@ obtainEdgeList <- function(genes, databases){
   
     not_found_ids <- lapply(spl_genes, function(gene_subs, metabolites){
                                               id_type       <- names(gene_subs)[1]
-                                              valid_id_list <- if(      id_type %in% names(metabolites)    )      metabolites[[id_type]]
-                                                               else if( id_type %in% keytypes(org.Hs.eg.db))      keys(org.Hs.eg.db, id_type)
+                                              valid_id_list <- if(      id_type %in% names(metabolites)    )                     metabolites[[id_type]]
+                                                               else if( id_type %in% AnnotationDbi::keytypes(org.Hs.eg.db))      AnnotationDbi::keys(org.Hs.eg.db, id_type)
                                               
                                               not_found     <- gene_subs[! gene_subs %in% valid_id_list]
                                               if( length(not_found) == 0 )  return(NULL)
@@ -120,8 +120,8 @@ obtainEdgeList <- function(genes, databases){
     uniq_ids                   <- databases[, unique(c(src_type, dest_type))]
     
     # IDs are converted either with metabolites from graphite OR org.Hs.eg.db
-    metabolite_or_orgHsegdb_id <- ifelse(uniq_ids %in% keytypes(org.Hs.eg.db), "org.Hs.eg.db",
-                                  ifelse(uniq_ids %in% names(metabolites),     "metabolites", NA))
+    metabolite_or_orgHsegdb_id <- ifelse(uniq_ids %in% AnnotationDbi::keytypes(org.Hs.eg.db), "org.Hs.eg.db",
+                                  ifelse(uniq_ids %in% names(metabolites),                    "metabolites", NA))
     return(split(uniq_ids, metabolite_or_orgHsegdb_id))
   }
 
