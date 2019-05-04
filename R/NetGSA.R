@@ -44,7 +44,7 @@ NetGSA <-
     
     #If any of these are out of order, reorder
     outoforder <- vapply(A, function(Ai, data) { 
-                          if(!all(rownames(Ai) %in% rownames(data)))   stop("Adjacency matrices and data do not contain same list of genes")
+                          if(setequal(rownames(Ai), rownames(data)))   stop("Adjacency matrices and data do not contain same list of genes")
                           else if(all(rownames(Ai) == rownames(data))) return(FALSE)
                           else                                         return(TRUE)
                         }, FUN.VALUE = logical(1), data = x)
