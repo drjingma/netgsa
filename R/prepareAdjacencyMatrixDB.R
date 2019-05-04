@@ -193,7 +193,10 @@ prepareAdjacencyMatrixDB <-
         #Also assume user non_edge undirected if graph is undirected. This is b/c ones MUST be symmetric
         if(!is.null(non_edges)) ones_freq[cbind(non_edges[["base_gene_dest"]], non_edges[["base_gene_src"]])] <- 0
         
-        if(!all(ones_freq == t(ones_freq))) stop("Undirected graph, but ones matrix is not symmetric")
+        if(!all(1*(ones_freq>0) == t(1*(ones_freq>0)))) stop("Undirected graph, but ones matrix is not symmetric")
+        ## IMPORTANT: Some of the edges reported (e.g. in breast cancer example) point to themselves. That is we see for example
+        ##            and edge between ENTREZID:781 <-> ENTREZID:781, same for ENTREZID:4338 and ENTREZID:4854.
+        ##            This is why the nrow(edgelist) + nrow(additional_dir_edges) do not equal sum(ones_freq>0)
     
       } else{
         #If directed, calculate correct order, error check, and then reOrder ones_freq and zeros
