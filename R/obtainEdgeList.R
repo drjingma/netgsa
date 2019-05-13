@@ -107,7 +107,7 @@ obtainEdgeList <- function(genes, databases){
     }
     
     # Warn if duplicated ID and ID type
-    duped_id <- duplicated(genes) & duplicated(names(genes))
+    duped_id <- duplicated(paste0(names(genes),":", genes))
     if(any(duped_id)) {stop(paste0("The following duplicate IDs were detected. Please remove and rerun: ", paste0(paste0(names(genes[duped_id]), " = ", genes[duped_id]), collapse = ", ")))}
     
     
