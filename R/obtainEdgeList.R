@@ -14,7 +14,7 @@ obtainEdgeList <- function(genes, databases){
   # Convert proteins
   ids_to_convert_using_orgHsegdb <- genes_with_id[conversion_type == "org.Hs.eg.db"]
   spl_ids                        <- split(ids_to_convert_using_orgHsegdb, ids_to_convert_using_orgHsegdb[["id_type"]])
-  converted_proteins             <- rbindlist(lapply(spl_ids, convert_protein_groups, databases_ids[["org.Hs.eg.db"]]), use.names = TRUE)
+  converted_proteins             <- rbindlist(lapply(spl_ids, convertProteinGroups, databases_ids[["org.Hs.eg.db"]]), use.names = TRUE)
   
   # Convert metabolites
   metabs_ids            <- genes_with_id[conversion_type == "graphite_metabolites"]
@@ -127,7 +127,7 @@ obtainEdgeList <- function(genes, databases){
 
 
 # Function to convert one set of proteins with a common base ID to all the ids we want to convert to
-  convert_protein_groups <- function(id_table, convert_to){
+  convertProteinGroups <- function(id_table, convert_to){
   
     # Should only ever be of length one b/c we split by id_type
     keytype                                         <- unique(id_table[["id_type"]])
