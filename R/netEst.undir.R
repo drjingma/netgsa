@@ -69,7 +69,7 @@ netEst.undir <-
       # estimate the network topology
       for (i in 1:p) {
         Y = matrix(X[, i], ncol = 1)
-        Xmat = X[, -i]
+        Xmat = X[, -i, drop = FALSE]
         
         ## Get the zero and one indices. 
         infoInd = one[i, -i] - zero[i, -i]
@@ -119,7 +119,7 @@ netEst.undir <-
                 cat("Incomplete information: with 0's and no 1's! \n ")
               }
               beta[(infoInd == -1), ] = 0
-              Xnew = Xmat[, (infoInd != -1)]
+              Xnew = Xmat[, (infoInd != -1), drop = FALSE]
               beta[(infoInd != -1), ] = glmnet.soft(Xnew, Y, lambda = lambda)
             } else {
               if (verbose) {
