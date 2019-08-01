@@ -1,6 +1,6 @@
 NetGSA <-
   function(
-    A,     	
+    A,     # a list of adj matrices
     x, 	
     group,    
     pathways, 	
@@ -18,12 +18,15 @@ NetGSA <-
     p <- dim(x)[1] #No. of genes
     n <- length(group) #No. of samples in total
     
+    # Assume the adj matrix is always block diagonal; It has one block in the worst case. 
+    A_mat <- lapply(A, function(a) as.matrix(bdiag(a)))     
+    
+    if (max(sapply(lapply(A_mat,abs),sum))==0) {
+      warning("No network interactions were found! Check your networks!")
+    }
+   
     if (is.null(rownames(x))){
       stop('Data matrix must have rownames!')
-    }
-    
-    if (is.null(rownames(A[[1]])) || is.null(rownames(A[[2]]))){
-      stop('Adjacency matrix must have rownames!')
     }
     
     if (!identical(rownames(x),colnames(pathways))){
@@ -65,49 +68,40 @@ NetGSA <-
                        ub = 100,           
                        tol = 0.01)         
     
-    A_c <- A
-    if (min(sapply(lapply(A_c, abs), sum))==0) {
-      warning("No network interactions were found! Check your networks!")
-    }
-    
     ##-----------------
     ##Determine whether the network is DAG
-    ##Assume A_c[[1]] and A_c[[2]] are of the same type (directed or undirected)
     isNetDAG <- FALSE
-    gA <- igraph::graph_from_adjacency_matrix((abs(A_c[[1]])>1e-06), mode="directed")
+    gA <- igraph::graph_from_adjacency_matrix((abs(A_mat[[1]])>1e-06), mode="directed")
     isNetDAG <- igraph::is_dag(gA)
     
-    p_c <- p
-    x_c <- x[match(rownames(A_c[[1]]),rownames(x)),]
-    
-    ##Find influence matrices based on adjacency matrices in A_c
+    ##Find influence matrices based on adjacency matrices in A
     ##Check if the influence matrices are well conditioned. Otherwise update eta.
     if (isNetDAG){
-      D <- lapply(A_c, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
-      tmp <- min(sapply(D, kappa)) 
-      while ((tmp> lim4kappa) && !isNetDAG) {
+      D <- lapply(A, lapply, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
+      tmp <- min(sapply(D,function(m) kappa(as.matrix(bdiag(m)))))
+      while ((tmp > lim4kappa) && !isNetDAG) {
         eta <- eta * 2
         warning(paste("Influence matrix is ill-conditioned, using eta =", eta))
-        D <- lapply(A_c, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
-        tmp <- min(sapply(D, kappa)) 
+        D <- lapply(A, lapply, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
+        tmp <- min(sapply(D,function(m) kappa(as.matrix(bdiag(m)))))
       }
       
-      DD <- lapply(D, function(m) m %*% t(m))
-      tmp <- min(sapply(DD, kappa))    
+      DD <- lapply(D, lapply, tcrossprod)
+      tmp <- min(sapply(DD,function(m) kappa(as.matrix(bdiag(m)))))
       while ((tmp > lim4kappa) && !isNetDAG) {
         eta <- eta * 2
         warning(paste("Influence matrix is ill-conditioned, using eta =", eta))  
-        D <- lapply(A_c, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
-        DD <- lapply(D, function(m) m %*% t(m))
-        tmp <- min(sapply(DD, kappa))
+        D <- lapply(A, lapply, function(m) adj2inf(AA=m, isDAG = isNetDAG, eta = eta))
+        DD <- lapply(D, lapply, tcrossprod)
+        tmp <- min(sapply(DD,function(m) kappa(as.matrix(bdiag(m)))))
       }
       
     } else {
       #Undirected gaussian graphical model
-      Ip <- diag( rep(1,p_c) )
-      D <- lapply(A_c, function(m) t(chol(pseudoinverse(Ip - m)))) 
+      D <- lapply(A, lapply, function(b) t(chol(pseudoinverse(diag(1,nrow(b)) - b)))) 
     }
-    output <- call.netgsa(D, x_c, group, pathways, varEstCntrl)
+    
+    output <- call.netgsa(D, x, group, pathways, varEstCntrl)
     
     ## Update the format of the output to be consistent with other methods. 
     out <- data.frame('pathway'= rownames(pathways),

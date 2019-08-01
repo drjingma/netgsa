@@ -1,71 +1,54 @@
 netgsa.ttest <-
-function(s2g, s2e, D, DtD, DDInv, n_vec, B, beta) {
-  ncond = length(D)
-  npath = dim(B)[1]
-  p = dim(B)[2]
-  Ip = matrix(0, p, p)
-  diag(Ip) = 1
-  
+function(s2g, s2e, D, DDt, DtDInv, n_vec, B, beta) {
+  ncond = length(n_vec)
+  p = ncol(B)
   n1 = n_vec[1]
   n2 = n_vec[2]
+
+  ##Initializing test statistics, its numerator and degrees of freedom. 
+  npath = nrow(B)
   teststat = matrix(0, npath, 1)
   num.tstat = matrix(0, npath, 1)
-  
-  ##Initializing the vector for degrees of freedom for the test statistics. 
   df = matrix(0, npath, 1)
   
-  ##Building the "contrast" matrix L, see Result in the paper 
-  L1 = (B %*% D[[1]]) * B
-  L2 = (B %*% D[[2]]) * B
-  LN = cbind(-L1, L2)
+  ## There matrices are needed in calculating DOF
+  ## Sigma is W in the notes. 
+  Sigma = lapply(DDt, lapply, function(ix) s2e * diag(1, nrow(ix)) + s2g * ix)
+  SigmaInv = lapply(Sigma, lapply, function(ix) chol2inv(chol(ix)))
+  SigmaInvD = lapply(1:ncond, function(j) mapply(function(a,b) crossprod(a,b), SigmaInv[[j]], DDt[[j]], SIMPLIFY = FALSE))
+  SinvSinv = lapply(SigmaInv, sapply, function(ix) matTr(ix, ix))
+  SinvDSinvD = lapply(SigmaInvD, sapply, function(ix) matTr(ix, ix))
+  SinvSinvD = lapply(1:ncond, function(j) mapply(function(a,b) matTr(a,b), SigmaInv[[j]], SigmaInvD[[j]]))
+  EH11 = 0.5*sum(sapply(SinvDSinvD,sum)) #This accommodates unequal number of blocks across conditions.
+  EH12 = 0.5*sum(sapply(SinvSinvD,sum))
+  EH22 = 0.5*sum(sapply(SinvSinv,sum))
+  Kmat = matrix(c(EH11, EH12, EH12, EH22), 2, 2, byrow = TRUE)
+  ## The Kmat will be the expected information matrix. 
+  ## Here we need its inverse in calculating the degrees of freedom. 
+  KmatInv = solve(Kmat)
   
+  ##Building the "contrast" vector; see Result in the paper 
+  LN = lapply(1:ncond, function(j) crossprod(t(B), as.matrix(bdiag(D[[j]]))) * B)
   ##----------------- 
   ##CALCULATING DEGREES OF FREEDOM & TEST STATS 
   ##----------------- 
-  #matrices needed in calculatoin of degrees of freedom
-  Sigma = lapply(1:ncond, function(ix) s2e * Ip + s2g * DtD[[ix]])
-  SigmaInv = lapply(1:ncond, function(ix) chol2inv(chol(Sigma[[ix]])))
-  SigmaInvD = lapply(1:ncond, function(ix) SigmaInv[[ix]] %*% DtD[[ix]])
-  SinvSinv = lapply(1:ncond, function(ix) matTr(SigmaInv[[ix]] %*% SigmaInv[[ix]]))
-  SinvDSinvD = lapply(1:ncond, function(ix) matTr(SigmaInvD[[ix]] %*% SigmaInvD[[ix]]))
-  SinvSinvD = lapply(1:ncond, function(ix) matTr(SigmaInv[[ix]] %*% SigmaInvD[[ix]]))
-  EH11 = (1/2) * Reduce("+",SinvDSinvD)
-  EH12 = (1/2) * Reduce("+",SinvSinvD)
-  EH22 = (1/2) * Reduce("+",SinvSinv)
   
-  #In this version of the code, K matrix is calculated directly! 
-  ## Kmat will be the expected information matrix. Here we need its inverse  
-  ## in calculating the degrees of freedom. 
-  Kmat = matrix(c(EH11, EH12, EH12, EH22), 2, 2, byrow = TRUE)
-  # print(Kmat)
-  KmatInv = solve(Kmat)
-  
-  #These matrices are needed in the calculation of test statistics 
-  mctildi = s2e * DDInv[[1]] + s2g * Ip
-  mttildi = s2e * DDInv[[2]] + s2g * Ip
-  
-  ##----------------- 
   for (rr in 1:npath) {
-    Lrow = t(as.matrix(LN[rr, ])) #single row of L3 
+    llt <- sapply(1:ncond,function(j) crossprod(LN[[j]][rr,])/n_vec[j]) 
+    lDtDlt <- sapply(1:ncond ,function(j) t(LN[[j]][rr,])%*%as.matrix(bdiag(DtDInv[[j]]))%*%LN[[j]][rr,]/n_vec[j])
+    Lbeta_full <- sapply(1:ncond, function(j) crossprod(LN[[j]][rr,], beta[[j]]))
     
-    Lrow1 = t(as.matrix(Lrow[, 1:p]))
-    Lrow2 = t(as.matrix(Lrow[, (p + 1):(2 * p)]))
-    
-    LC11Lprime = (1/n2) * Lrow2 %*% mttildi %*% t(Lrow2) + (1/n1) * Lrow1 %*% mctildi %*% t(Lrow1)
-    
-    g1 = (1/n2) * (Lrow2 %*% t(Lrow2)) + (1/n1) * (Lrow1 %*% t(Lrow1))
-    g2 = (1/n2) * Lrow2 %*% DDInv[[2]] %*% t(Lrow2) + (1/n1) * Lrow1 %*% DDInv[[1]] %*% t(Lrow1)
-    g = matrix(c(g1, g2), 2, 1)
-    
+    g = matrix(c(sum(llt), sum(lDtDlt)), 2, 1)
+    LC11Lprime = s2g * g[1] + s2e * g[2]
+
     #test statistic 
-    num.tstat[rr] = Lrow2 %*% beta[[2]] + Lrow1 %*% beta[[1]]
+    num.tstat[rr] =  Lbeta_full[2] - Lbeta_full[1]
     teststat[rr] = num.tstat[rr]/sqrt(LC11Lprime)
     
     #calculating df based on the Satterthwaite approximation method  
     #using the formula nu=(2*LCL'^2)/g'Kg with K being the empirical covariance matrix.
     #NOTE: If df2<2, it is set to 2 
-    
-    df[rr] = 2 * (LC11Lprime)^2/(t(g) %*% KmatInv %*% g)
+    df[rr] = 2 * LC11Lprime^2/(t(g) %*% KmatInv %*% g)
     if (df[rr] < 2) 
       df[rr] = 2
     

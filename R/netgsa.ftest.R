@@ -1,72 +1,75 @@
 netgsa.ftest <-
-function(s2g, s2e, D, DtD, DDInv, n_vec, B, beta_hat){
-  ncond = length(D)
-  npath = dim(B)[1] 
-  p = dim(B)[2]
-  Ip = diag(rep(1, p))
+function(s2g, s2e, D, DDt, DtDInv, n_vec, B, beta){
+  ncond = length(n_vec)
+  npath = nrow(B) 
+  teststat = matrix(0, npath, 1)
+  df = matrix(0, npath, 1)
+  p = length(beta[[1]])
   
-  teststat2 = matrix(0, npath, 1)
-  df2 = matrix(0, npath, 1)
+  ##calculate the empirical covariance matrix Kmat
+  ## Sigma is W in the notes. 
+  Sigma = lapply(DDt, lapply, function(ix) s2e * diag(1, nrow(ix)) + s2g * ix)
+  SigmaInv = lapply(Sigma, lapply, function(ix) chol2inv(chol(ix)))
+  SigmaInvD = lapply(1:ncond, function(j) mapply(function(a,b) crossprod(a,b), SigmaInv[[j]], DDt[[j]], SIMPLIFY = FALSE))
+  SinvSinv = lapply(SigmaInv, sapply, function(ix) matTr(ix, ix))
+  SinvDSinvD = lapply(SigmaInvD, sapply, function(ix) matTr(ix, ix))
+  SinvSinvD = lapply(1:ncond, function(j) mapply(function(a,b) matTr(a,b), SigmaInv[[j]], SigmaInvD[[j]]))
+  EH11 = 0.5*sum(sapply(SinvDSinvD,sum)) 
+  EH12 = 0.5*sum(sapply(SinvSinvD,sum))
+  EH22 = 0.5*sum(sapply(SinvSinv,sum))
   
-  ####C = inverse of Psi ' W^{-1} Psi is calculated in the main code
-  Cmat = lapply(1:ncond, function(k) (s2g*Ip + s2e * DDInv[[k]])/n_vec[k])
-  Cmat = as.matrix(bdiag(Cmat))
+  Kmat = matrix(c(EH11, EH12, EH12, EH22), 2, 2, byrow = TRUE)
+  KmatInv = solve(Kmat)
   
   for (rr in 1:npath){  	   
     ##obtain the contrast matrix L for a given pathway
-    L = get.contrast(D, B[rr,]) 
+    LN_list = lapply(1:ncond, function(j) crossprod(B[rr,], as.matrix(bdiag(D[[j]]))) * B[rr,])
+    
+    ##calculate ll' and l(Lambda'Lambda)^{-1}l' for each row of L
+    llt <- sapply(1:ncond,function(j) tcrossprod(LN_list[[j]])/n_vec[j]) 
+    lDtDlt <- sapply(1:ncond ,function(j) LN_list[[j]]%*%as.matrix(bdiag(DtDInv[[j]]))%*%t(LN_list[[j]])/n_vec[j])
+    Lbeta_full <- sapply(1:ncond, function(j) crossprod(t(LN_list[[j]]), beta[[j]]))
+    Lbeta <- Lbeta_full[-1] - Lbeta_full[-ncond]
+    
+    ##construct LCL' matrix
+    LCL <- matrix(0, ncond-1, ncond-1)
+    L_mat <- matrix(0, ncond-1, ncond*p) 
+    for (j in 1:(ncond-1)){
+      L_mat[j, ((j-1)*p + 1): ((j+1)*p)] = c(-LN_list[[j]], LN_list[[j+1]]) 
+      
+      LCL[j,j] <- (s2e*lDtDlt[j] + s2g*llt[j]) + (s2e*lDtDlt[j+1] + s2g*llt[j+1])
+      if (j<ncond-1){
+        LCL[j,j+1] <- - (s2e*lDtDlt[j+1] + s2g*llt[j+1])
+        LCL[j+1,j] <- LCL[j,j+1]
+      }
+      if (j>1){
+        LCL[j-1,j] <- - (s2e*lDtDlt[j] + s2g*llt[j])
+        LCL[j,j-1] <- LCL[j-1,j]
+      } 
+    }
+    q = rankMatrix(L_mat)		
     
     ##get the test statistic
-    LCL = L %*% Cmat %*% t(L)
-    LCL_inv = solve(LCL)
-    q = rankMatrix(L)		
-    teststat2[rr] = (t(unlist(beta_hat)) %*% t(L) %*% LCL_inv %*% L %*% unlist(beta_hat))/q
+    teststat[rr] = (t(Lbeta) %*% solve(LCL) %*% Lbeta)/q
     
     ##find projection P and diagonal D such that LCL' = P'DP
-    tmp <- eigen(LCL)
-    D_diag <- diag(tmp$values)		
+    D_diag <- eigen(LCL)$values
     
-    ## Calculate the first-order derivatives of C wrt to parameters s2g and s2e	
-    g1Mat = as.matrix(bdiag(lapply(1:ncond, function(ix) Ip/n_vec[ix])))
-    g2Mat = as.matrix(bdiag(lapply(1:ncond, function(ix) DDInv[[ix]]/n_vec[ix])))
+    gm <- lapply(1:q, function(j) c(llt[j]+llt[j+1], lDtDlt[j] + lDtDlt[j+1]))
+    vm <- sapply(1:q, function(j) (2*D_diag[j]^2) / (t(gm[[j]]) %*% KmatInv %*% gm[[j]] ))
+    Em <- sum(sapply(vm, function(a) ifelse(a>2, a/(a-2), 0)))
     
-    ##calculate the empirical covariance matrix Kmat
-    Sigma = lapply(1:ncond, function(ix) s2e * Ip + s2g * DtD[[ix]] )
-    SigmaInv = lapply(1:ncond, function(ix) chol2inv(chol(Sigma[[ix]])) )
-    SigmaInvD = lapply(1:ncond, function(ix) SigmaInv[[ix]] %*% DtD[[ix]] )
-    SinvSinv = lapply(1:ncond, function(ix) matTr(SigmaInv[[ix]] %*% SigmaInv[[ix]]))
-    SinvDSinvD = lapply(1:ncond, function(ix) matTr(SigmaInvD[[ix]] %*% SigmaInvD[[ix]]))
-    SinvSinvD = lapply(1:ncond, function(ix) matTr(SigmaInv[[ix]] %*% SigmaInvD[[ix]]))
-    EH11 = (1/2) * Reduce("+", SinvDSinvD)
-    EH12 = (1/2) * Reduce("+", SinvSinvD)
-    EH22 = (1/2) * Reduce("+", SinvSinv)
-    
-    Kmat = matrix(c(EH11, EH12, EH12, EH22), 2, 2, byrow = TRUE)
-    KmatInv = solve(Kmat)
-    
-    Em <- 0				
-    for(m in 1:q){
-      lm <- matrix(L[m,], nrow=1)		## lm is the mth row of L
-      gm1 <- lm %*% g1Mat %*% t(lm)
-      gm2 <- lm %*% g2Mat %*% t(lm)
-      gm <- c(gm1, gm2)  ## gm is the gradient of lm C lm' wrt theta
-      vm <- (2*D_diag[m,m]^2) / (t(gm) %*% KmatInv %*% gm )
-      if(vm > 2){
-        Em <- Em + (vm/(vm-2))
-      }
-    }
-    
-    ##The first degree of freedom is q. We need to calculate the 2nd degree of freedom df2. 
+    ##The first degree of freedom is q. The second degree of freedom is df. 
     if(Em > q){
-      df2[rr] = (2*Em) / (Em - q)
+      df[rr] = (2*Em) / (Em - q)
     }
     
     ## NOTE: matlab only accepts positive integers as df's for F-dist.
     ## Therefore, I had set the denom df to 1 if it is zero, otherwise round it to integer values
-    df2[rr] <- (df2[rr] >= 1) * ceiling(df2[rr]) + (df2[rr] < 1) * 1
+    df[rr] <- (df[rr] >= 1) * ceiling(df[rr]) + (df[rr] < 1) * 1
   }
   
-  pvals = 1 - pf(abs(teststat2), q, df2) + pf(-abs(teststat2), q, df2)  
+  pvals = 1 - pf(abs(teststat), q, df) + pf(-abs(teststat), q, df)  
   
-  return(list(teststat = teststat2, df = df2, p.value = pvals))
+  return(list(teststat = teststat, df = df, p.value = pvals))
 }

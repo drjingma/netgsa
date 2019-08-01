@@ -12,12 +12,9 @@ he_method = function(n, D, DtD, resid, control=NULL){
     ratio = ifelse(is.null(control$ratio), 0.2, control$ratio)
   }
   
-  resid_m = do.call(cbind, resid)
-  p = dim(resid_m)[1]
   ncond = length(D)
+  p = nrow(D[[1]])
 
-  rm(resid_m)
-  
   if (!sampling)
   {
     ##------------------
@@ -40,14 +37,14 @@ he_method = function(n, D, DtD, resid, control=NULL){
       y_sum = matrix(rowSums(sapply(1:nk, resid_value)), ncol=1)
       return(c(t(s0)%*%y_sum, t(si)%*%y_sum))
     }
-    XTY = rowSums(sapply(1:ncond, cond_k))
+    XTY = matrix(rowSums(sapply(1:ncond, cond_k)), c(2,1))
     
     if (lklMethod == 'HE'){
       res = solve(XTX) %*% XTY
       s2e = ifelse(res[1]<0, 0, res[1])
       s2g = ifelse(res[-1]<0, 0, res[-1])
     } else if (lklMethod == 'REHE'){
-      res_qp = solve.QP(Dmat = XTX, dvec=XTY, Amat = diag(1,ncond), bvec = rep(0, ncond), meq=0, factorized=FALSE)
+      res_qp = solve.QP(Dmat = XTX, dvec=XTY, Amat = diag(1,2), bvec = rep(0, 2), meq=0, factorized=FALSE)
       s2e = res_qp$solution[1]
       s2g = res_qp$solution[-1]
     }
@@ -110,7 +107,7 @@ he_method = function(n, D, DtD, resid, control=NULL){
       s2e = ifelse(res[1]<0, 0, res[1])
       s2g = ifelse(res[-1]<0, 0, res[-1])
     } else if (lklMethod == 'REHE'){
-      res_qp = solve.QP(Dmat = XTX, dvec=XTY, Amat = diag(1,ncond), bvec = rep(0, ncond), meq=0, factorized=FALSE)
+      res_qp = solve.QP(Dmat = XTX, dvec=XTY, Amat = diag(1,2), bvec = rep(0, 2), meq=0, factorized=FALSE)
       s2e = res_qp$solution[1]
       s2g = res_qp$solution[-1]
     }
