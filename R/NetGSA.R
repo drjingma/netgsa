@@ -5,6 +5,7 @@ NetGSA <-
     group,    
     pathways, 	
     lklMethod=c("REML","ML", "HE", "REHE"),
+    cluster=FALSE,
     sampling = FALSE,
     sample_n = NULL,
     sample_p = NULL, 
@@ -19,7 +20,12 @@ NetGSA <-
     n <- length(group) #No. of samples in total
     
     # Assume the adj matrix is always block diagonal; It has one block in the worst case. 
-    A_mat <- lapply(A, function(a) as.matrix(bdiag(a)))     
+    if (cluster){
+      A_mat <- lapply(A, function(a) as.matrix(bdiag(a)))     
+    } else {
+      A_mat = A;
+      A <- lapply(A, list)
+    }
     
     if (max(sapply(lapply(A_mat,abs),sum))==0) {
       warning("No network interactions were found! Check your networks!")
