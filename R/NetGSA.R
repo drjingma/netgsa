@@ -15,12 +15,18 @@ NetGSA <-
     this.call <- match.call()
     lklMethod <- match.arg(lklMethod)
     
+    edgelist <- A[["edgelist"]]
+    A[["edgelist"]] <- NULL
+    
     p <- dim(x)[1] #No. of genes
     n <- length(group) #No. of samples in total
     
     # Assume the adj matrix is always block diagonal; It has one block in the worst case. 
-    A_mat <- lapply(A, function(a) as.matrix(bdiag(a)))     
-    
+    # Also add dimnames onto matrix
+    A_mat <- lapply(A, function(a) {a_full <- as.matrix(bdiag(a))
+                                    dimnames(a_full) <- list(Reduce(c, lapply(a, rownames)), Reduce(c, lapply(a, colnames)))
+                                    return(a_full)
+                                    })     
     if (max(sapply(lapply(A_mat,abs),sum))==0) {
       warning("No network interactions were found! Check your networks!")
     }
@@ -46,14 +52,14 @@ NetGSA <-
     }
     
     #If any of these are out of order, reorder
-    outoforder <- vapply(A, function(Ai, data) { 
+    outoforder <- vapply(A_mat, function(Ai, data) { 
                           if(!setequal(rownames(Ai), rownames(data)))  stop("Adjacency matrices and data do not contain same list of genes")
                           else if(all(rownames(Ai) == rownames(data))) return(FALSE)
                           else                                         return(TRUE)
                         }, FUN.VALUE = logical(1), data = x)
     if(any(outoforder)){
-      order <- rownames(A[[1]])
-      A <- lapply(A, function(Ai) Ai[order, order])
+      order <- rownames(A_mat[[1]])
+      A_mat <- lapply(A_mat, function(Ai) Ai[order, order])
       x <- x[order,]
     }
     
@@ -107,10 +113,31 @@ NetGSA <-
     out <- data.frame('pathway'= rownames(pathways),
                       'pSize' = rowSums(pathways),
                       'pval' = output$p.value,
-                      'pFdr' = p.adjust(output$p.value,"BH"))
+                      'pFdr' = p.adjust(output$p.value,"BH"),
+                      'teststat' = output$teststat)
     
     out <- out[order(out$pFdr),]
     rownames(out) <- NULL
     
-    return(list(results=out,beta=output$beta,s2.epsilon=output$s2.epsilon,s2.gamma=output$s2.gamma))
+    #Test individual genes for plotting
+    gene_tests <- setNames(genefilter::rowFtests(x, group), c("teststat", "pval"))
+    gene_tests[, c("gene", "pFdr")] <- list(rownames(x), p.adjust(gene_tests[["pval"]], "BH"))
+    setDT(gene_tests); setkeyv(gene_tests, "gene")
+    #Graph object for plotting
+    graph_obj <- list(edgelist = edgelist, pathways = rehapePathways(pathways), gene.tests = gene_tests)
+
+    netgsa_obj <- list(results=out,beta=output$beta,s2.epsilon=output$s2.epsilon,s2.gamma=output$s2.gamma, graph = graph_obj)
+    class(netgsa_obj) <- "NetGSA"
+    
+    return(netgsa_obj)
   }
+
+
+
+# Helper functions -----------------------------------------------------------------
+
+reshapePathways <- function(pathways){
+  res <- data.table::setDT(melt(pathways, varnames = c("pathway", "gene")))
+  res[, c("pathway", "gene") := .(as.character(pathway), as.character(gene))]
+  return(res[res$value == 1,][,c("pathway", "gene")])
+}
