@@ -39,10 +39,11 @@ In either case, the user can still apply \code{NetGSA} if only partial informati
 }
 \value{
 A list with components
-\item{results}{A data frame with pathway names, pathway sizes, p-values and false discovery rate corrected q-values for all pathways.}
+\item{results}{A data frame with pathway names, pathway sizes, p-values and false discovery rate corrected q-values, and test statistic for all pathways.}
 \item{beta}{Vector of fixed effects of length \eqn{2p}, of which the first half is for condition 1 and the second half for condition 2.}
 \item{s2.epsilon}{Variance of the random errors \eqn{\epsilon}.}
 \item{s2.gamma}{Variance of the random effects \eqn{\gamma}.}
+\item{graph}{List of components needed in \code{plot.NetGSA}.}
 }
 \references{
 Ma, J., Shojaie, A. & Michailidis, G. (2016) Network-based pathway enrichment analysis with incomplete network information. Bioinformatics 32(20):165--3174. \url{https://doi.org/10.1093/bioinformatics/btw410}
