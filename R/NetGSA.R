@@ -5,7 +5,6 @@ NetGSA <-
     group,    
     pathways, 	
     lklMethod=c("REML","ML", "HE", "REHE"),
-    cluster=FALSE,
     sampling = FALSE,
     sample_n = NULL,
     sample_p = NULL, 
@@ -23,16 +22,11 @@ NetGSA <-
     n <- length(group) #No. of samples in total
     
     # Assume the adj matrix is always block diagonal; It has one block in the worst case. 
-    if (cluster){
-      # Also add dimnames onto matrix
-      A_mat <- lapply(A, function(a) {a_full <- as.matrix(bdiag(a))
-                                      dimnames(a_full) <- list(Reduce(c, lapply(a, rownames)), Reduce(c, lapply(a, colnames)))
-                                      return(a_full)
-                                      })      
-    } else {
-      A_mat = A;
-      A <- lapply(A, list)
-    }
+    # Also add dimnames onto matrix. This automatically works with clustering or no clustering
+    A_mat <- lapply(A, function(a) {a_full <- as.matrix(bdiag(a))
+                                    dimnames(a_full) <- list(Reduce(c, lapply(a, rownames)), Reduce(c, lapply(a, colnames)))
+                                    return(a_full)
+                                    })
     if (max(sapply(lapply(A_mat,abs),sum))==0) {
       warning("No network interactions were found! Check your networks!")
     }
@@ -126,11 +120,15 @@ NetGSA <-
     rownames(out) <- NULL
     
     #Test individual genes for plotting
-    gene_tests <- setNames(genefilter::rowFtests(x, group), c("teststat", "pval"))
+    if(length(unique(group)) > 1){
+      gene_tests <- setNames(genefilter::rowFtests(x, factor(group)), c("teststat", "pval"))
+    } else{
+      gene_tests <- setNames(genefilter::rowttests(x)[,c("statistic", "p.value")], c("teststat", "pval"))
+    }
     gene_tests[, c("gene", "pFdr")] <- list(rownames(x), p.adjust(gene_tests[["pval"]], "BH"))
     setDT(gene_tests); setkeyv(gene_tests, "gene")
     #Graph object for plotting
-    graph_obj <- list(edgelist = edgelist, pathways = rehapePathways(pathways), gene.tests = gene_tests)
+    graph_obj <- list(edgelist = edgelist, pathways = reshapePathways(pathways), gene.tests = gene_tests)
 
     netgsa_obj <- list(results=out,beta=output$beta,s2.epsilon=output$s2.epsilon,s2.gamma=output$s2.gamma, graph = graph_obj)
     class(netgsa_obj) <- "NetGSA"
