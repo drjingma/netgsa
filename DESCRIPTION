@@ -22,7 +22,8 @@ Imports:
 	msigdbr, 
 	org.Hs.eg.db,
 	quadprog, 
-	rlang 
+	RCy3,
+	rlang
 Suggests: knitr, MASS, rmarkdown
 License: GPL (>=2)
 LazyLoad: yes
