@@ -43,10 +43,7 @@ obtainEdgeList <- function(genes, databases){
   return(list(edgelist = full_edgelist_subs_dir_uniq, genes_not_in_dbs = genes_not_in_dbs))
 }
 
-
-
-
-
+# Helper functions -----------------------------------------------------------------
 
 # Wrapper to stack databases of interest 
   stackDatabases <- function(databases){
@@ -71,7 +68,9 @@ obtainEdgeList <- function(genes, databases){
     # Make sure their gene is gene type we know about
     unconv_ids <- !names(genes) %in% c(names(metabolites), AnnotationDbi::keytypes(org.Hs.eg.db::org.Hs.eg.db))
     
-    if(any(unconv_ids)) stop(paste0("Don't know how to convert ID type(s): ", paste(names(genes)[unconv_ids], collapse = ", ")))
+    if(any(unconv_ids)) stop(paste0(paste0("Don't know how to convert ID type(s): ", paste(names(genes)[unconv_ids], collapse = ", ")), 
+                                           ". Please use ID type from AnnotationDbi::keytypes(org.Hs.eg.db::org.Hs.eg.db)."))
+    
   
     
     # All ID types are valid, drop duped IDs and make sure actual genes are valid for specific ID type
@@ -136,7 +135,7 @@ obtainEdgeList <- function(genes, databases){
     if(all(keytype == convert_to))                     return(data.table(base_gene = id_table[["gene"]], converted_gene = id_table[["gene"]], base_id = id_table[["id_type"]], converted_id = id_table[["id_type"]]))
     
     # We select c(keytype, convert_to) so that we can select base_id twice if its in list we want to convert to. This is possible b/c data.table allows duplicate column names
-    converted                                       <- setDT(AnnotationDbi::select(org.Hs.eg.db::org.Hs.eg.db, keys = id_table[["gene"]], columns = convert_to, keytype = keytype))[, c(keytype, convert_to), with = FALSE]
+    converted                                       <- setDT(suppressMessages(AnnotationDbi::select(org.Hs.eg.db::org.Hs.eg.db, keys = id_table[["gene"]], columns = convert_to, keytype = keytype)))[, c(keytype, convert_to), with = FALSE]
     converted                                       <- unique(data.table::melt(converted, id.vars = keytype, variable.name = "converted_id", value.name = "converted_gene", variable.factor = FALSE, value.factor = FALSE, na.rm = TRUE))
     converted[, c("base_id")]                       <- keytype
     names(converted)[names(converted) == keytype]   <- "base_gene"
