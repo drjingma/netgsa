@@ -1,6 +1,6 @@
 ---
 title: 'netgsa: Network-based Gene Set Analysis'
-author: "Jing Ma"
+author: "Jing Ma, Michael Hellstern"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -18,77 +18,93 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-In this vignette, we demonstrate the NetGSA workflow using a breast cancer data example downloaded from the Cancer Genome Atlas [@cancer2012comprehensive]. In particular, we illustrate how to incorporate existing network information (e.g. curated edges from KEGG) to improve the power of pathway enrichment analysis with NetGSA. Details of the method are avaialble in @ma2016network.  
+In this vignette, we demonstrate the NetGSA workflow using a breast cancer data example downloaded from the Cancer Genome Atlas [@cancer2012comprehensive]. In particular, we illustrate how to incorporate existing network information (e.g. curated edges from KEGG) to improve the power of pathway enrichment analysis with NetGSA. Details of the method are avaialble in @ma2016network.
 
-# Case Studies
-Our example data set comes from a breast cancer study [@cancer2012comprehensive], which consists of gene expression data from 520 subjects including 117 estrogen-receptor-negative (ER-) and 403 estrogen-receptor-positive (ER+). The goal is to generate a diagnostic pathway signatures that could distinguish patients with different ER statuses by comparing gene expression data from the two classes. These signatures could provide additional clinical benefit in diagnosing breast cancer.
+`netgsa` provides simple functions that automatically search known gene databases using `graphite` for network information and integrate seamlessly with `NetGSA` pathway enrichment and`igraph` and Cytoscape plotting. In this vignette, we demonstrate the NetGSA workflow explaining proper data types and usage of the `netgsa` package.
 
-## Preparation
-We first load necessary R/Bioconductor packages. Additional packages such as **msigdbr** are useful if you would like to import pathways from [MSigDB](http://software.broadinstitute.org/gsea/msigdb). 
+# Data: Breast cancer study (2012)
+Our example data set comes from a breast cancer study [@cancer2012comprehensive], which consists of gene expression data from 520 subjects including 117 estrogen-receptor-negative (ER-) and 403 estrogen-receptor-positive (ER+). The goal is to generate diagnostic pathway signatures that could distinguish patients with different ER statuses by comparing gene expression data from the two classes. These signatures could provide additional clinical benefit in diagnosing breast cancer.
 
-```{r package, eval=FALSE}
-library(glassoFast)
-library(graphite)
-library(igraph)
-library(msigdbr) 
+
+## Step 1: Data set-up
+
+NetGSA works directly with the expression data matrix. When loading the data, it is important to check the distribution of raw sequencing reads and perform log transformation if necessary. Data in this example were already log transformed. Rows of the data matrix correspond to genes and columns to subjects. Genes in this data matrix were labeled with Entrez IDs, same as those used in KEGG pathways. 
+
+```{r data, warning = FALSE, message = FALSE}
 library(netgsa)
-library(Rgraphviz)
-```
-
-
-## Step 1: loading RNA-seq data
-
-NetGSA works directly with the expression data matrix. When loading the data, it is important to check the distribution of raw sequencing reads and perform log transformation if necessary. Data in this example were already log transformed. It is also important to label the rows and columns of the data matrix. Rows of the data matrix correspond to genes, whereas columns to subjects. Genes in this data matrix were labeled with Entrez IDs, same as those used in KEGG pathways. 
-
-```{r data}
-load("breastcancer2012.rda")
+library(graphite)
+library(data.table)
+data("breastcancer2012")
 ls()
 ```
 
-The variables in this data object include 
+The objects loaded are:
 
- - the data matrix (`x`), with rows for genes and columns for samples, 
- - the group labels (`group`) for ER status, 
- - a directed acyclic graph from KEGG (`g`), 
- - the data frame consisting of known edges (`edgelist`), 
- - the data frame consisting of (a subset of) the non-edges (`nonedgelist`), 
- - a list of KEGG pathways indexed with Entrez gene IDs (`pathways`). 
+* `x`, the data matrix
+* `edgelist`, a data.frame containing user-specified edges
+* `nonedgelist`, a data.frame containing user-specified non-edges
+* `group`, a vector mapping columns of `x` to conditions
+* `pathways`, a list of KEGG pathways,
+* `pathways_mat`, an indicator matrix of KEGG pathways to be used directly in `NetGSA`
 
+### Data matrix, `x`
 
-```{r rownames}
+The data matrix, `x` must have rownames that are named as  `"GENE_ID:GENE_VALUE"`. Since  `netgsa`  allows the user to search for edges in multiple databases in `graphite`, each of which may use different identifiers (e.g. KEGG, Reactome, Biocarta, etc.), `netgsa` needs to know the identifier for a given gene so we can convert it properly. For example, if you have two genes "ENTREZID: 7186" and "ENTREZID: 329" and want to search for potential edges between these two within Reactome,  `netgsa` must first convert these genes to their "UNIPROT" IDs and use those to search for edges.
+
+`netgsa` uses the  `AnnotationDbi`  package to convert genes. The valid list of  `"GENE_ID"`'s is:
+```{r}
+AnnotationDbi::keytypes(org.Hs.eg.db::org.Hs.eg.db)
+```
+
+For metabolites, `netgsa` uses `graphite`'s built in metabolite mapping. These are:
+```{r}
+colnames(graphite:::metabolites())
+```
+
+An example of what the rownames for the data matrix, `x`, should look like is:
+```{r}
 head(rownames(x))
 ```
+
+The columns of the data matrix do not need to be named, but it is useful for keeping track of groups. 
+
+### Group vector
+
+The `group` object is a vector (numeric or character) and must be the same length as `ncol(x)`. Each element of the `group` tells us which group each column of `x` corresponds to. For example, if `group[1] = "Positive"` this says that the first column of `x` corresponds to the `"Positive"` condition.
 
 We can find out the ER status by looking at the group labels.
 ```{r ER status}
 table(group)
 ```
 
-The two data frames `nonedgelist` and `edgelist` consist of edges (nonedges) extracted from user provided sources. Eace row represents one edge. The first column represents the starting node, with the second column being the end node. The last column indicates whether the edge is directed. As of now, NetGSA assumes that all edges are either simultaneously undirected or simultaneously directed, as determined by the first edge.  
-```{r edgelist}
-head(edgelist)
+### Edgelist / Non-edgelist
+
+The edgelist and non-edgelist are strings representing file locations and are read in using `data.table`'s `fread()` command. Each observation is assumed to be a directed edge (for edgelist) or a directed non-edge (for non-edgelist). They both must have 4 columns in the following order. The columns do not necessarily need to be named properly, they simply must be in this specific order:
+
+* 1st column - Source gene (base_gene_src), e.g. "7534""
+* 2nd column - Gene identifier of the source gene (base_id_src), e.g. "ENTREZID"
+* 3rd column - Destination gene (base_gene_dest), e.g. "8607"
+* 4th column - Gene identifier of the destination gene (base_id_dest) e.g. "UNIPROT"
+ 
+Note it is assumed that each edge/non-edge is directed so if you want an undirected edge/non-edge you should put in two observations as in:
+```{r, echo = FALSE}
+sample_edges <- data.table(base_gene_src = c("7534", "8607"), base_id_src = c("ENTREZID", "ENTREZID"), base_gene_dest = c("8607", "7534"), base_id_dest = c("ENTREZID", "ENTREZID"))
+sample_edges
 ```
 
-## Step 2: pathway enrichment analysis
+### Pathway matrix
 
-### Enrichment analysis with undirected networks
-```{r packages, include=FALSE}
-library(glassoFast)
-library(glmnet)
-library(graphite)
-library(igraph)
-library(msigdbr) 
-library(netgsa)
-```
+Lastly, as documented in `?NetGSA` we need an indicator matrix of pathways. The rows of this matirx should correspond to pathways and the columns to the genes included in the analysis. The dimension is then *npath* x *p*. Values in this matrix should be 1 for genes that are in a given pathway and 0 otherwise. 
 
 We consider pathways from KEGG [@kanehisa2000kegg]. KEGG pathways can be accessed in R using the **graphite** package. 
 ```{r pathways}
-paths <- pathways('hsapiens','kegg')
+paths <- graphite::pathways('hsapiens','kegg')
 paths[[1]]
 head(nodes(paths[[1]]))
 ```
 
-Alternatively, one can also use the function `preparePathways` to import pathways from KEGG. 
+
+Alternatively, one can also use the function `preparePathways` to import pathways from KEGG or MSigDB. 
 ```{r preparePathways}
 pathwayList <- preparePathways('kegg')
 head(pathwayList[[1]])
@@ -100,93 +116,187 @@ pathwayList <- preparePathways('MSigDB')
 head(pathwayList[[1]])
 ```
 
+For this vignette, we'll use `pathways_mat`:
 
-For the purpose of this tutorial, we use the pathways stored in `pathways`:
-```{r our pathways}
-pathways[1:2]
+```{r}
+pathways_mat[1:5,7, drop = FALSE]
 ```
 
-To prepare the adjacency matrices needed for the function `NetGSA`, one can read existing edges from file. For example, suppose the edges in `edgelist` are stored in a csv file. The function `prepareAdjacencyMatrix` can input edges from external files or import edges from KEGG data base. 
-```{r csv}
-write.csv(edgelist,file='edgelist.txt',row.names = FALSE)
-out <- prepareAdjacencyMatrix(x, group, pathways, FALSE, 'edgelist.txt', NULL)
+The 1 shown indicates that `"ENTREZID: 18"` belongs to the *Alanine, aspartate and glutamate metabolism* pathway.
+
+In summary, the data that we'll need to run our pathway enrichment analysis is:
+
+* the data matrix (`x`), with rows for genes and columns for samples, 
+* the group labels (`group`) for ER status, 
+* the path to the file consisting of known edges (`edgelist`) to be read in with `fread()`, 
+* the path to the file consisting of (a subset of) the non-edges (`nonedgelist`) to be read in with `fread()`, 
+* pathway identifiers in matrix form (`pathways_mat`). 
+ 
+
+<!-- The two data frames `nonedgelist` and `edgelist` consist of edges (nonedges) extracted from user provided sources. Eace row represents one edge. The first column represents the starting node, with the second column being the end node. The last column indicates whether the edge is directed. As of now, NetGSA assumes that all edges are either simultaneously undirected or simultaneously directed, as determined by the first edge.   -->
+<!-- ```{r edgelist} -->
+<!-- head(edgelist) -->
+<!-- ``` -->
+
+## Step 2: Pathway enrichment analysis
+
+Now that we have our data set-up properly we can begin with the pathway enrichment analysis. `netgsa` has two main functions. The first is `prepareAdjacencyMatrixDB` which searches for edges in public databases and uses this information to estimate the adjacency matrices needed for `NetGSA`. The second is `NetGSA` which performs network-based gene set analysis. We will go into further details about the usage of these functions below.
+
+
+### prepareAdjacencyMatrixDB
+
+After having the data set-up, the first step in pathway enrichment analysis with `netgsa` is to estimate the adjacency matrices. Remember, the rownames of the data matrix `X` must be named as `"GENE_ID:GENE_VALUE"` as in `"ENTREZID:7534"`. The `group` vector is defined as above.
+
+The `databases` argument defines the databases to search. The options are the databases for homo spaiens available in `graphite`. These are:
+
+```{r, echo = FALSE}
+as.character(graphite::pathwayDatabases()[graphite::pathwayDatabases()$species == "hsapiens","database"])
 ```
 
-The object `pathways` has in total 100 pathways. To illustrate the use of `NetGSA`, consider only genes from *ErbB signaling pathway* and *Jak-STAT signaling pathway*. Given the pathways, one first estimates the underlying networks (represented as weighted adjacency matrices), while incorporating available network information. 
+Note the `databases` argument is case sensitive so make sure to pass `"reactome"` and not `"Reactome"`.
 
-```{r prepareAdjacencyMatrix}
-genenames <- unique(c(pathways[[24]], pathways[[52]]))
-genenames <- intersect(genenames, rownames(x))
-p <- length(genenames)
-p
-sx <- x[match(genenames, rownames(x)),]
-sout <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, 'edgelist.txt', NULL)
+The `cluster` argument controls whether or not clustering is used when estimating the adjacency matrix. The default behavior is to use clustering if `p > 2,500`. However, the user can override this behavior by setting the `cluster` argument. `prepareAdjacencyMatrixDB` chooses the best clustering method from 6 possible methods in the `igraph` package. More details are provided in `?prepareAdjacencyMatrixDB`.
+
+User specified edge and non-edge files are specified with the `file_e` and `file_ne` arguments respectively. For more information on the assumptions and how network information is incorporated from the database edgelists, the user edges, and the user non-edges see the Details section and `file_e` and `file_ne` parameters in  `?prepareAdjacencyMatrixDB`.
+
+It is also important to note that `prepareAdjacencyMatrixDB` will automatically choose the correct network estimation technique based on whether or not the graph is directed so no additional work is needed to determine undirected vs directed graphs. This is documented in `?prepareAdjacencyMatrixDB`.
+
+Now let's get to some example code. Suppose we wanted to estimate the network for our example data using our known edges/non-edges and searching for edges in Reactome, KEGG, and BioCarta. Let's also use clustering to speed up computation. We could do this simply by:
+
+```{r}
+network_info <- prepareAdjacencyMatrixDB(x, group, c("kegg", "reactome", "biocarta"),
+                                         cluster = TRUE, file_e = "edgelist.txt", 
+                                         file_ne = "nonedgelist.txt")
 ```
 
-`prepareAdjacencyMatrix` returns the pathway indicator matrix that will be used in the `NetGSA` function. In this example, due to the high overlapping among pathways, the selected genes actually cover 41 pathways.  
-```{r B}
-# pathway indicator matrix
-dim(sout$B)
+The main value of interest is `network_info[["Adj"]]`, a list of lists. The top level list indicates the condition while the next level is a list of adjacency matrices (one for each cluster). If `cluster = FALSE` there is only one cluster and thus one adjacency matrix for each condition. The adjacency matrix for the first condition and first cluster can be accessed with:
+
+```{r}
+network_info[["Adj"]][[1]][[1]][1:5,7:9]
 ```
 
-The returned 0-1 adjacency matrices from `prepareAdjacencyMatrix` can be used as network information for estimating the partial correlation network under each condition. We recommend using carefully chosen tuning parameters as this yields better estimates of the networks. 
-```{r estimate matrices}
-ncond <- length(unique(group))
-Amat <- vector("list",ncond)
-sx <- sx[match(colnames(sout$B), rownames(sx)),]
+The total number of clusters can be identified with:
 
-for (k in 1:ncond){
-  data_c <- sx[,(group==k)]
-  # select the tuning parameter
-  fitBIC <- bic.netEst.undir(data_c,one=sout$Adj,
-                             lambda=seq(1,10)*sqrt(log(p)/ncol(data_c)),eta=0.1)
-  # refit the network
-  fit <- netEst.undir(data_c,one=sout$Adj,
-                      lambda=which.min(fitBIC$BIC)*sqrt(log(p)/ncol(data_c)),eta=0.1)
-  Amat[[k]] <- fit$Adj
-}
+```{r}
+length(network_info[["Adj"]][[1]])
 ```
 
-Given the networks, one can test for pathway enrichment as follows:
-```{r netgsa 1}
-test1 <- NetGSA(Amat, sx, group, pathways = sout$B, lklMethod = 'REHE')
-head(test1$results)
+Note we cannot control cluster size which is why we try several methods and implement rules on which to choose. For more information see `?prepareAdjacencyMatrixDB`.
+
+### NetGSA
+
+Now that the adjacency matrices are assembled we can perform pathway inference using `NetGSA`:
+
+```{r, eval = FALSE}
+pathway_tests <- NetGSA(network_info[["Adj"]], x, group, pathways_mat)
 ```
 
-Note `prepareAdjacencyMatrix` can also estimate the networks if the argument `estimate_network=TRUE`. In such cases, `prepareAdjacencyMatrix` returns the weighted adjacency matrices estimated under a fixed set of tuning parameters, which may not be optimal. The resulting adjacency matrices can be directly used in `NetGSA` for pathway enrichment. 
-```{r netgsa 2}
-sout <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, 'edgelist.txt', NULL, estimate_network=TRUE, lambda_c = 9, eta=0.1)
-test2 <- NetGSA(sout$Amat, sx, group, pathways = sout$B, lklMethod = 'REHE')
-head(test2$results)
+The returned value from `prepareAdjacencyMatrixDB` will always be in the correct format regardless of whether or not clustering is used, so one should always be able to pass `network_info[["Adj"]]` directly to `NetGSA`. The default is to use restriced maximum likelihood (REML) to calculate the variance component. However, this can be quite slow, so another option is to use the restricted Haseman-Elston regression (REHE) instead. This is beneficial since it allows for sampling so you can significantly increase the speed. For example:
+
+```{r}
+pathway_tests_rehe <- NetGSA(network_info[["Adj"]], x, group, pathways_mat, 
+                             lklMethod = "REHE", sampling = TRUE, 
+                             sample_n = 0.25, sample_p = 0.25)
 ```
 
-### Enrichment analysis with directed networks
-`NetGSA` can also handle directed networks. For example, 
-```{r netgsa DAG}
-# e.g. the "Adrenergic signaling in cardiomyocytes" pathway from KEGG is a DAG.
-print(is_dag(g))
+The `sample_n` and `sample_p` parameters control the ratio for subsampling observations (columns of data matrix `x`) and variables (rows of data matrix `x`) respectively. More information on REHE and sampling can be found in the `?NetGSA` Details section.
 
-genenames <- V(g)$name
-p <- length(genenames)
+Note that inference using REML can take several hours depending on the complexity of the problem, while inference using REHE can take minutes. In this example, with  `sample_n = 0.25`,  `sample_p = 0.25` only took about 2 minutes on the machine used to create this vignette.
 
-# reorder the variables and get the adjacency matrix
-reOrder <- topo_sort(g,"in")
-Adj <- as.matrix(get.adjacency(g))
-Adj <- Adj[reOrder,reOrder]
+The main inference results are stored in `pathway_tests[["results"]]` and contain the pathway names as well as their significance (p-values and q-values are reported) and test statistics.
 
-B <- matrix(rep(1,p),nrow=1)
-rownames(B) <- "Adrenergic signaling in cardiomyocytes"
-colnames(B) <- rownames(Adj)
-gx <- x[match(rownames(Adj), rownames(x)),]
+## Step 3: Visualization
 
-Amat <- vector("list", 2)
-for (k in 1:2){
-  data_c <- gx[,which(group==k)]
-  Amat[[k]] <- netEst.dir(data_c, one = Adj)$Adj
-}
-test <- NetGSA(Amat, gx, group, pathways = B, lklMethod = 'REHE')
+`netgsa` provides several options for visualizing the results from `NetGSA`. Cytoscape or igraph is used to display the main results depending on whether the user has the Cytoscape app open.
 
+### Cytoscape
+
+If the user has Cytoscape open on their computer, calling `plot.NetGSA` will create several plots:
+
+1. **Cytoscape plots** - the first place `plot.NetGSA` generates plots is within Cytoscape. A nested network is created where the main network (Pathway Network) displays pathways as nodes. Edges in this network represent edges between genes contained within those pathways. In this network, the `results` object from `NetGSA()` is loaded as the node data and the number of edges between genes of separate pathways are loaded as edge data in a variable called "weight". Node color is mapped to the test statistic. Negative values are orange, values around 0 are white, and positive values are blue. Node border color is mapped to q-values going from red (0) to white (1). 
+
+    In addition to the main network, a network is generated for each pathway. These are the gene networks underlying each pathway and are referred to as the within pathway networks. The within pathway networks are linked to the nodes in the Pathway Network using Cytoscape's nested network format. An example will make this more clear. Calling:
+
+    ```{r, eval = FALSE}
+    plot(pathway_tests_rehe)
+    ```
+
+    The Pathway Network might look something like:
+    ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
+        knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/cyto_pathway_network_default.png")
+    ```
+    
+    The most interesting part of the Cytoscape nested network framework is the ability to view the within pathway networks. Suppose you were looking at the Pathway Network and noticed the *ErbB signaling network* was highly significant and you wanted to investigate it by looking at the underlying gene network. To do this, one could simply right click on the *ErbB signaling pathway* node in the Pathway Network, and go to Nested Networks -> Go To Nested Network. Alternatively, the nested networks have the same name as the pathway they represent so one could simply navigate to the *ErbB signaling pathway* using the *Network* tab in the *Control Panel* on the left side of the Cytoscape GUI. To save time, the nested networks are not formatted. However, we can use the `formatPathways` function to format one or multiple using the default style.
+
+    ```{r, eval = FALSE}
+    formatPathways(pathway_tests_rehe, "ErbB signaling pathway")
+    ```
+    
+    ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
+    knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/cyto_erbb.png")
+    ```
+    
+    The `formatPathways` function colors gene nodes based on FDR adjusted q-value. For more information see `?formatPathways`.
+
+    To export images from Cytoscape one can either use the GUI or the `RCy3::exportImage()` function.
+
+2. **Cytoscape legend generated in R** - Legends are difficult to incorporate on the plot within Cytoscape so we generate a legend in R. Alternatively it is also possible to generate an image directly in Cytoscape. The Cytoscape manual page has more information on that: http://manual.cytoscape.org/en/stable/Styles.html.
+
+    ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
+    knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/cyto_legend.png")
+    ```
+    
+3. **Igraph plot** - Lastly, for users that prefer R, `plot.NetGSA` will also generate a plot using `igraph` with the same layout and node color/node border color mapping as in Cytoscape.
+    ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
+    knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/igraph_cyto_pathway_network_default.png")
+    ```
+    
+    The Cytoscape plotting section is wrapped up with a few notes on customization. While `plot.NetGSA` has a default layout, a custom layout can be provided to both `plot.NetGSA` and `formatPathways` using the `graph_layout` parameter. For Cytoscape, this parameter is passed as a string to `RCy3::layoutNetwork` so it may be helpful to read that documentation. Alternatively, one does not even need to use this parameter. They can set up a custom layout using the Cytoscape GUI or can even use the `RCy3::layoutNetwork` function directly. For example, calling `layoutNetwork("degree-circle")` will change the layout of the current network selected in Cytoscape.
+
+    ```{r, eval = FALSE}
+    # Format the "Neurotrophin signaling pathway" using the "degree-circle" layout
+    formatPathways(pathway_tests_rehe, "Neurotrophin signaling pathway",
+                 graph_layout = "degree-circle")
+    ```
+
+    Lastly, for users who want even more customization, the `results` object returned from `NetGSA()` and the edge weight between pathways are loaded into Cytoscape. So to size edges based on edge weight one could:
+
+    ```{r, eval = FALSE}
+    RCy3::setCurrentNetwork("Pathway Network")
+    edge_weights <- RCy3::getTableColumns(table = "edge", columns = "weight")
+    RCy3::setEdgeLineWidthMapping("weight", c(min(edge_weights), max(edge_weights)), c(1,5))
+    ```
+
+### Igraph
+
+If the user does not have Cytoscape open, a 3-D igraph plot is created using `igraph::rglplot`. Due to the nature of the `igraph::rglplot` function we only map test statistics to node color. We are not able to map colors to both the node and node border. 
+
+```{r, eval = FALSE}
+plot(pathway_tests_rehe)
 ```
+```{r, fig.retina=NULL, out.width=600, echo=FALSE}
+knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/igraph_pathway_network_default.png")
+```
+```{r, fig.retina=NULL, out.width=600, echo=FALSE}
+knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/igraph_legend.png")
+```
+
+Again, a custom layout can be specified with the `graph_layout` parameter. As documented in `?plot.NetGSA` this must be a function that takes one parameter which is passed to the `igraph::rglplot` function. For example to layout a graph randomly we can do:
+
+```{r, eval = FALSE}
+layout_fun <- function(ig) igraph::layout_randomly(ig)
+plot(pathway_tests_rehe, graph_layout = layout_fun)
+```
+
+While igraph does not provide a similar nested network format as Cytoscape, we can use the `zoomPathway` function to look at the gene interactions within a pathway:
+
+```{r, eval = FALSE}
+zoomPathway(pathway_tests_rehe, "ErbB signaling pathway")
+```
+```{r, fig.retina=NULL, out.width=600, echo=FALSE}
+knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/igraph_erbb.png")
+```
+
 
 ## References
 
