@@ -9,6 +9,7 @@ plot.NetGSA <- function(x, graph_layout = NULL, rescale_node = c(2,10), rescale_
     cyto <- plot_cytoscape.NetGSA(edges_pathways, edges_all, x$graph$pathways, x$results, x$graph$gene.tests, graph_layout = graph_layout)
     legend_title <- "Cytoscape plot legend"
   } else{
+    warning("For betting visualization results, please install and open Cytoscape")
     cyto <- NULL
     legend_title <- "Igraph plot legend"
   }
