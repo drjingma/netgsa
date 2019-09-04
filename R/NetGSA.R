@@ -118,18 +118,18 @@ NetGSA <-
     
     out <- out[order(out$pFdr),]
     rownames(out) <- NULL
-    
     #Test individual genes for plotting
     if(length(unique(group)) > 1){
       gene_tests <- setNames(genefilter::rowFtests(x, factor(group)), c("teststat", "pval"))
     } else{
       gene_tests <- setNames(genefilter::rowttests(x)[,c("statistic", "p.value")], c("teststat", "pval"))
     }
-    gene_tests[, c("gene", "pFdr")] <- list(rownames(x), p.adjust(gene_tests[["pval"]], "BH"))
+    #Copy b/c setkeyv then orders the rownames of x, not just for gene_tests. This is some quite odd data.table behavior
+    gene_tests[, c("gene", "pFdr")] <- list(copy(rownames(x)), p.adjust(gene_tests[["pval"]], "BH"))
     setDT(gene_tests); setkeyv(gene_tests, "gene")
+    
     #Graph object for plotting
     graph_obj <- list(edgelist = edgelist, pathways = reshapePathways(pathways), gene.tests = gene_tests)
-
     netgsa_obj <- list(results=out,beta=output$beta,s2.epsilon=output$s2.epsilon,s2.gamma=output$s2.gamma, graph = graph_obj)
     class(netgsa_obj) <- "NetGSA"
     
