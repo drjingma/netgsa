@@ -12,7 +12,7 @@ prepareAdjacencyMatrixDB(x, group, databases = NULL, cluster = NULL,
   
   \item{group}{Vector of class indicators of length \eqn{n}.}
   
-  \item{databases}{(Optional) Character vector of graphite databases you wish to search for edges. Since one can search in multiple databases with different identifiers, converts genes using \code{AnnotationDbi::select} and convert metabolites using \code{graphite:::metabolites()}. Databases are also used to specify non-edges. See Details for more information. }
+  \item{databases}{(Optional) Either (1) the result of a call to \code{obtainEdgeList} or (2) a character vector of graphite databases you wish to search for edges. Since one can search in multiple databases with different identifiers, converts genes using \code{AnnotationDbi::select} and convert metabolites using \code{graphite:::metabolites()}. Databases are also used to specify non-edges. If \code{NULL} no external database information will be used. See Details for more information.}
   
   \item{cluster}{(Optional) Logical indicating whether or not to cluster genes to estimate adjacency matrix. If not specified, set to TRUE if there are > 2,500 genes (p > 2,500). The main use of clustering is to speed up calcuation time. If the dimension of the problem, or equivalently the total number of unique genes across all pathways, is large, \code{prepareAdjacencyMatrixDB} may be a slow.
   
@@ -45,11 +45,11 @@ prepareAdjacencyMatrixDB(x, group, databases = NULL, cluster = NULL,
 
 The function \code{prepareAdjacencyMatrixDB} accepts both network information from user specified sources as well as a list of graphite databases to search for edges in. \code{prepareAdjacencyMatrixDB} calculates the 0-1 adjacency matrices and runs \code{\link{netEst.undir}} or \code{\link{netEst.dir}} if the graph is undirected or directed. 
 
-When searching for network information, \code{prepareAdjacencyMatrixDB} makes some important assumptions about edges and non-edges. As already stated, the first is that user specified non-edges are given precedence. 
+When searching for network information, \code{prepareAdjacencyMatrixDB} makes some important assumptions about edges and non-edges. As already stated, the first is that in the case of conflicting information, user specified non-edges are given precedence. 
 
-\code{prepareAdjacencyMatrixDB} uses \code{databases} to identify non-edges. If two genes are identified in the \code{databases} edges but there is no edge between them this will be coded as a non-edge. The rationale is that if there was an edge between these two genes it would be present.
+\code{prepareAdjacencyMatrixDB} uses \code{\link{obtainEdgeList}} to standardize and search the \code{graphite} databases for edges. For more information see \code{?obtainEdgeList}. \code{prepareAdjacencyMatrixDB} also uses database information to identify non-edges. If two genes are identified in the \code{databases} edges but there is no edge between them this will be coded as a non-edge. The rationale is that if there was an edge between these two genes it would be present.
 
-No information about genes not identified in \code{databases} edgelists is assumed. That is, if the user passes gene A, but gene A is not found in any of the edges in \code{databases} no information about Gene A is assumed. Gene A will have neither edges nor non-edges.
+\code{prepareAdjacencyMatrixDB} assumes no information about genes not identified in \code{databases} edgelists. That is, if the user passes gene A, but gene A is not found in any of the edges in \code{databases} no information about Gene A is assumed. Gene A will have neither edges nor non-edges.
 
 Once all the network and clustering information has been compiled, \code{prepareAdjacencyMatrixDB} estimates the network. \code{prepareAdjacencyMatrixDB} will automatically detect directed graphs, rearrange them to the correct order and use \code{netEst.dir} to estimate the network. When the graph is undirected \code{netEst.undir} will be used. For more information on these methods see \code{?netEst.dir} and \code{?netEst.undir}.
 

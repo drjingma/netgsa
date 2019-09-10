@@ -1,5 +1,5 @@
 obtainEdgeList <- function(genes, databases){
-
+  genes <- setNames(gsub(".*:(.*)", "\\1", genes), gsub("(.*):.*", "\\1", genes))
 
   metabolites_ids   <- as.data.table(graphite:::metabolites())
   genes_with_id     <- reshapeIDs(genes, metabolites_ids)
@@ -40,7 +40,10 @@ obtainEdgeList <- function(genes, databases){
   ## to tell whether or not they should be 0 or 1.
   genes_not_in_dbs <- findGenesNotInDb(full_edgelist, finalized_ids)
   
-  return(list(edgelist = full_edgelist_subs_dir_uniq, genes_not_in_dbs = genes_not_in_dbs))
+  obtainedEdgeList <- list(edgelist = full_edgelist_subs_dir_uniq, genes_not_in_dbs = genes_not_in_dbs)
+  class(obtainedEdgeList) <- "obtainedEdgeList"
+  
+  return(obtainedEdgeList)
 }
 
 # Helper functions -----------------------------------------------------------------

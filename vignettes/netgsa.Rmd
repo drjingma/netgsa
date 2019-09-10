@@ -15,7 +15,6 @@ bibliography: bibli.bib
 rm(list=ls())
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 # Introduction
 
 In this vignette, we demonstrate the NetGSA workflow using a breast cancer data example downloaded from the Cancer Genome Atlas [@cancer2012comprehensive]. In particular, we illustrate how to incorporate existing network information (e.g. curated edges from KEGG) to improve the power of pathway enrichment analysis with NetGSA. Details of the method are avaialble in @ma2016network.
@@ -147,7 +146,7 @@ Now that we have our data set-up properly we can begin with the pathway enrichme
 
 After having the data set-up, the first step in pathway enrichment analysis with `netgsa` is to estimate the adjacency matrices. Remember, the rownames of the data matrix `X` must be named as `"GENE_ID:GENE_VALUE"` as in `"ENTREZID:7534"`. The `group` vector is defined as above.
 
-The `databases` argument defines the databases to search. The options are the databases for homo spaiens available in `graphite`. These are:
+The `databases` argument can be either (1) the result of `obtainEdgeList` or (2) a character vector defining the databases to search. These are essentially the same thing, the only difference is that for the character vector method, `obtainEdgeList` is called inside `prepareAdjacencyMatrixDB` and cannot be saved. Since `prepareAdjacencyMatrixDB` queries the `graphite` databases when it is called and `graphite` databases can change overtime, this may not be desirable for reproducibility. Using the `obtainEdgeList` method, one can save the edgelist to ensure the same network information is used across iterations or in the future. In both methods, one must specify the databases to search. The options are the databases for homo spaiens available in `graphite`. These are:
 
 ```{r, echo = FALSE}
 as.character(graphite::pathwayDatabases()[graphite::pathwayDatabases()$species == "hsapiens","database"])
@@ -164,15 +163,16 @@ It is also important to note that `prepareAdjacencyMatrixDB` will automatically 
 Now let's get to some example code. Suppose we wanted to estimate the network for our example data using our known edges/non-edges and searching for edges in Reactome, KEGG, and BioCarta. Let's also use clustering to speed up computation. We could do this simply by:
 
 ```{r}
-network_info <- prepareAdjacencyMatrixDB(x, group, c("kegg", "reactome", "biocarta"),
+database_search <- obtainEdgeList(rownames(x), c("kegg", "reactome", "biocarta"))
+network_info <- prepareAdjacencyMatrixDB(x, group, database_search,
                                          cluster = TRUE, file_e = "edgelist.txt", 
                                          file_ne = "nonedgelist.txt")
 ```
 
-The main value of interest is `network_info[["Adj"]]`, a list of lists. The top level list indicates the condition while the next level is a list of adjacency matrices (one for each cluster). If `cluster = FALSE` there is only one cluster and thus one adjacency matrix for each condition. The adjacency matrix for the first condition and first cluster can be accessed with:
+The main value of interest is `network_info[["Adj"]]`, a list of lists. The top level list indicates the condition while the next level is a list of adjacency matrices (one for each cluster). If `cluster = FALSE` there is only one cluster and thus one adjacency matrix for each condition. Also note that in this example, the object `database_search` was created. If desired, this can be saved and used later to ensure the same network information was used. However, the results may not be exactly the same. For example, some of the clustering algorithms are not deterministic so while the network information may be the same the clusters may be different resulting in different adjacency matrices. The adjacency matrix for the first condition and first cluster can be accessed with:
 
 ```{r}
-network_info[["Adj"]][[1]][[1]][1:5,7:9]
+network_info[["Adj"]][[1]][[1]][7:9,7:9]
 ```
 
 The total number of clusters can be identified with:
@@ -223,7 +223,7 @@ If the user has Cytoscape open on their computer, calling `plot.NetGSA` will cre
 
     The Pathway Network might look something like:
     ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
-        knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/cyto_pathway_network_default.png")
+        knitr::include_graphics("cyto_pathway_network_default.png")
     ```
     
     The most interesting part of the Cytoscape nested network framework is the ability to view the within pathway networks. Suppose you were looking at the Pathway Network and noticed the *ErbB signaling network* was highly significant and you wanted to investigate it by looking at the underlying gene network. To do this, one could simply right click on the *ErbB signaling pathway* node in the Pathway Network, and go to Nested Networks -> Go To Nested Network. Alternatively, the nested networks have the same name as the pathway they represent so one could simply navigate to the *ErbB signaling pathway* using the *Network* tab in the *Control Panel* on the left side of the Cytoscape GUI. To save time, the nested networks are not formatted. However, we can use the `formatPathways` function to format one or multiple using the default style.
@@ -233,7 +233,7 @@ If the user has Cytoscape open on their computer, calling `plot.NetGSA` will cre
     ```
     
     ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
-    knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/cyto_erbb.png")
+    knitr::include_graphics("cyto_erbb.png")
     ```
     
     The `formatPathways` function colors gene nodes based on FDR adjusted q-value. For more information see `?formatPathways`.
@@ -243,12 +243,12 @@ If the user has Cytoscape open on their computer, calling `plot.NetGSA` will cre
 2. **Cytoscape legend generated in R** - Legends are difficult to incorporate on the plot within Cytoscape so we generate a legend in R. Alternatively it is also possible to generate an image directly in Cytoscape. The Cytoscape manual page has more information on that: http://manual.cytoscape.org/en/stable/Styles.html.
 
     ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
-    knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/cyto_legend.png")
+    knitr::include_graphics("cyto_legend.png")
     ```
     
 3. **Igraph plot** - Lastly, for users that prefer R, `plot.NetGSA` will also generate a plot using `igraph` with the same layout and node color/node border color mapping as in Cytoscape.
     ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
-    knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/igraph_cyto_pathway_network_default.png")
+    knitr::include_graphics("igraph_cyto_pathway_network_default.png")
     ```
     
     The Cytoscape plotting section is wrapped up with a few notes on customization. While `plot.NetGSA` has a default layout, a custom layout can be provided to both `plot.NetGSA` and `formatPathways` using the `graph_layout` parameter. For Cytoscape, this parameter is passed as a string to `RCy3::layoutNetwork` so it may be helpful to read that documentation. Alternatively, one does not even need to use this parameter. They can set up a custom layout using the Cytoscape GUI or can even use the `RCy3::layoutNetwork` function directly. For example, calling `layoutNetwork("degree-circle")` will change the layout of the current network selected in Cytoscape.
@@ -275,10 +275,10 @@ If the user does not have Cytoscape open, a 3-D igraph plot is created using `ig
 plot(pathway_tests_rehe)
 ```
 ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
-knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/igraph_pathway_network_default.png")
+knitr::include_graphics("igraph_pathway_network_default.png")
 ```
 ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
-knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/igraph_legend.png")
+knitr::include_graphics("igraph_legend.png")
 ```
 
 Again, a custom layout can be specified with the `graph_layout` parameter. As documented in `?plot.NetGSA` this must be a function that takes one parameter which is passed to the `igraph::rglplot` function. For example to layout a graph randomly we can do:
@@ -294,7 +294,7 @@ While igraph does not provide a similar nested network format as Cytoscape, we c
 zoomPathway(pathway_tests_rehe, "ErbB signaling pathway")
 ```
 ```{r, fig.retina=NULL, out.width=600, echo=FALSE}
-knitr::include_graphics("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa/vignettes/igraph_erbb.png")
+knitr::include_graphics("igraph_erbb.png")
 ```
 
 

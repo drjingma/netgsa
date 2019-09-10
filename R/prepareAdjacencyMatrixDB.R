@@ -16,10 +16,19 @@ prepareAdjacencyMatrixDB <-
                user_info[["user_non_edges"]][["src"]], user_info[["user_non_edges"]][["dest"]]) %in% genes)){
       stop("Some genes in user supplied edges or non-edges were not specified in gene list")
     }
+    
+    if (!all(class(databases) %in% c("obtainedEdgeList", "character", "NULL"))){
+      stop(paste0("Don't know how to handle databases object of type: ", class(databases)))
+    }
 
     # What if we don't find any edges? Should probably throw warning
     if(!is.null(databases)){
-      edgeL_info      <- obtainEdgeList(genes, databases)
+      
+      edgeL_info <- if(identical(class(databases), "character")){
+                        obtainEdgeList(rownames(X), databases)
+                    } else if(identical(class(databases), "obtainedEdgeList")){
+                        copy(databases) #To avoid overwriting if data.table
+                    }
       edgeL           <- edgeL_info[["edgelist"]]
       edgeL_freq      <- if(nrow(edgeL) == 0) {warning("No edges found in databases") 
                                                NULL}
