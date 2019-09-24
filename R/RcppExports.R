@@ -2,22 +2,22 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 crossprodCpp <- function(A, B = NULL) {
-    .Call('_netgsacpp_crossprodCpp', PACKAGE = 'netgsacpp', A, B)
+    .Call('_netgsa_crossprodCpp', PACKAGE = 'netgsa', A, B)
 }
 
 matMult <- function(A, B) {
-    .Call('_netgsacpp_matMult', PACKAGE = 'netgsacpp', A, B)
+    .Call('_netgsa_matMult', PACKAGE = 'netgsa', A, B)
 }
 
 solveCpp <- function(A, B = NULL) {
-    .Call('_netgsacpp_solveCpp', PACKAGE = 'netgsacpp', A, B)
+    .Call('_netgsa_solveCpp', PACKAGE = 'netgsa', A, B)
 }
 
 cholCpp <- function(A) {
-    .Call('_netgsacpp_cholCpp', PACKAGE = 'netgsacpp', A)
+    .Call('_netgsa_cholCpp', PACKAGE = 'netgsa', A)
 }
 
 pseudoinverseCpp <- function(A) {
-    .Call('_netgsacpp_pseudoinverseCpp', PACKAGE = 'netgsacpp', A)
+    .Call('_netgsa_pseudoinverseCpp', PACKAGE = 'netgsa', A)
 }
 
