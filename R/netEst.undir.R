@@ -109,7 +109,7 @@ netEst.undir <-
                 Xmat2 = matrix(Xmat[, (infoInd == 0)], ncol=sum(infoInd == 0)) ##unknown edges 
                 beta[(infoInd == 1), ] = glmnet.soft(Xmat1, Y, lambda = lambda*weight)
                 tmp = as.matrix(beta[(infoInd == 1), ])
-                res.glm = Y - Xmat1 %*% tmp
+                res.glm = Y - Xmat1 %*Cpp% tmp
                 beta[(infoInd == 0), ] = glmnet.soft(Xmat2, res.glm, lambda = lambda)
               }
             }
@@ -130,7 +130,7 @@ netEst.undir <-
               Xmat2 = matrix(Xmat[, (infoInd == 0)], ncol=sum(infoInd == 0)) ##unknown edges 
               beta[(infoInd == 1), ] = glmnet.soft(Xmat1, Y, lambda = lambda*weight) 
               tmp = as.matrix(beta[(infoInd == 1), ])
-              res.glm = Y - Xmat1 %*% tmp
+              res.glm = Y - Xmat1 %*Cpp% tmp
               beta[(infoInd == 0), ] = glmnet.soft(Xmat2, res.glm, lambda = lambda)
             }
           }
@@ -155,7 +155,7 @@ netEst.undir <-
     
     ## estimate the partial correlation matrix using fast graphical lasso 
     obj <- glassoFast(empcov, rho = rhoM)
-    siginv <- chol2inv(chol(obj$w))
+    siginv <- chol2inv(cholCpp(obj$w))
     
     partialCor <- Ip - cov2cor(siginv)
     partialCor[abs(partialCor) < 1e-08] <- 0

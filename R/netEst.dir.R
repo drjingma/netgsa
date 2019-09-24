@@ -113,7 +113,7 @@ function(x, zero=NULL, one=NULL, lambda = NULL, verbose=FALSE, eps=1e-08) {
     Adj[i, 1:(i-1)] = as.vector(beta); 
   }
   
-  infmat = solve(Ip - Adj)
+  infmat = solveCpp(Ip - Adj)
   infmat[abs(infmat) < eps] <- 0
   rownames(Adj) = rownames(x);
   colnames(Adj) = rownames(x);

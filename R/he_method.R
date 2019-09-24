@@ -31,16 +31,16 @@ he_method = function(n, D, DtD, resid, control=NULL){
       
       si = matrix(DtD[[k]][lower.tri(DtD[[k]], diag = T)], ncol=1)
       resid_value = function(i){
-        resid_sq = resid[[k]][,i, drop=F] %*% t(resid[[k]][,i, drop=F])
+        resid_sq = resid[[k]][,i, drop=F] %*Cpp% t(resid[[k]][,i, drop=F])
         return(resid_sq[lower.tri(resid_sq, diag = T)])
       }
       y_sum = matrix(rowSums(sapply(1:nk, resid_value)), ncol=1)
-      return(c(t(s0)%*%y_sum, t(si)%*%y_sum))
+      return(c(t(s0)%*Cpp%y_sum, t(si)%*Cpp%y_sum))
     }
     XTY = matrix(rowSums(sapply(1:ncond, cond_k)), c(2,1))
     
     if (lklMethod == 'HE'){
-      res = solve(XTX) %*% XTY
+      res = solveCpp(XTX) %*Cpp% XTY
       s2e = ifelse(res[1]<0, 0, res[1])
       s2g = ifelse(res[-1]<0, 0, res[-1])
     } else if (lklMethod == 'REHE'){
@@ -74,7 +74,7 @@ he_method = function(n, D, DtD, resid, control=NULL){
     rm(temp)
     
     resid_value_ps = function(k, i){
-      resid_sq = resid_s[[k]][,i, drop=F] %*% t(resid_s[[k]][,i, drop=F])
+      resid_sq = resid_s[[k]][,i, drop=F] %*Cpp% t(resid_s[[k]][,i, drop=F])
       return(resid_sq[lower.tri(resid_sq, diag = T)])                 
     }
     
@@ -94,16 +94,16 @@ he_method = function(n, D, DtD, resid, control=NULL){
       nk = dim(resid_s[[k]])[2]
       si = matrix(DtD_s[[k]][lower.tri(DtD_s[[k]], diag = T)], ncol=1)
       resid_value = function(i){
-        resid_sq = resid_s[[k]][,i, drop=F] %*% t(resid_s[[k]][,i, drop=F])
+        resid_sq = resid_s[[k]][,i, drop=F] %*Cpp% t(resid_s[[k]][,i, drop=F])
         return(resid_sq[lower.tri(resid_sq, diag = T)])
       }
       y_sum = matrix(rowSums(sapply(1:nk, resid_value)), ncol=1)
-      return(c(t(s0)%*%y_sum, t(si)%*%y_sum))
+      return(c(t(s0)%*Cpp%y_sum, t(si)%*Cpp%y_sum))
     }
     XTY = rowSums(sapply(1:ncond, cond_k))
     
     if (lklMethod == 'HE'){
-      res = solve(XTX) %*% XTY
+      res = solveCpp(XTX) %*Cpp% XTY
       s2e = ifelse(res[1]<0, 0, res[1])
       s2g = ifelse(res[-1]<0, 0, res[-1])
     } else if (lklMethod == 'REHE'){

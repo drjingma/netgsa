@@ -39,7 +39,7 @@ function(x0, D, r, control = NULL) {
     f <- function(tau) {
       
       V = lapply(DDt, function(m) tau*m + Ip)
-      Vinv = lapply(V, function(m) chol2inv(chol(m)))
+      Vinv = lapply(V, function(m) chol2inv(cholCpp(m)))
       
       tmp = ifelse((lklMethod == "REML"), N - ncond*p, N)
       val = sum(sapply(1:ncond, function(k) n[k] * as.numeric(determinant(V[[k]])$modulus))) 
@@ -48,7 +48,7 @@ function(x0, D, r, control = NULL) {
       ##for REML
       if (lklMethod == "REML"){
         # First sum the matrices, then take the determinant and finally take the logarithm
-        m_list = lapply(1:ncond, function(k) n[k] * (crossprod(D[[k]], Vinv[[k]]) %*% D[[k]]) )
+        m_list = lapply(1:ncond, function(k) n[k] * (crossprodCpp(D[[k]], Vinv[[k]]) %*Cpp% D[[k]]) )
         tmp = Reduce("+", m_list)
         val = val + as.numeric(determinant(tmp)$modulus)                        
       }
@@ -60,23 +60,23 @@ function(x0, D, r, control = NULL) {
     g <- function(tau) {
       
       V = lapply(DDt, function(m) tau*m + Ip)
-      Vinv = lapply(V, function(m) chol2inv(chol(m)))
-      C = lapply(1:ncond, function(k) crossprod(D[[k]], Vinv[[k]]) %*% D[[k]])
+      Vinv = lapply(V, function(m) chol2inv(cholCpp(m)))
+      C = lapply(1:ncond, function(k) crossprodCpp(D[[k]], Vinv[[k]]) %*Cpp% D[[k]])
       trace.C = sapply(C, function(z) sum(diag(z)))
       
       tmp = ifelse((lklMethod == "REML"), N - ncond*p, N)
       
-      a = sapply(1:ncond, function(k) matTr(crossprod(t(Vinv[[k]]), DDt[[k]]), crossprod(t(Vinv[[k]]), R[[k]]))) ####
+      a = sapply(1:ncond, function(k) matTr(crossprodCpp(t(Vinv[[k]]), DDt[[k]]), crossprodCpp(t(Vinv[[k]]), R[[k]]))) ####
       b = sapply(1:ncond, function(k) matTr(Vinv[[k]], R[[k]])) 
       
       val = sum(sapply(1:ncond, function(k) n[k]*trace.C[k] )) - tmp * sum(a)/sum(b)
       
       ##for REML
       if (lklMethod == "REML") {
-        C2 = lapply(C, function(m) m %*% m)
+        C2 = lapply(C, function(m) m %*Cpp% m)
         tmp1 = Reduce("+", lapply(1:ncond, function(k) n[k] * C[[k]]))
         tmp2 = Reduce("+", lapply(1:ncond, function(k) n[k] * C2[[k]]))
-        val = val - matTr(solve(tmp1), tmp2)
+        val = val - matTr(solveCpp(tmp1), tmp2)
       }
       
       as.numeric(val)
@@ -86,17 +86,17 @@ function(x0, D, r, control = NULL) {
     
     h <- function(tau) {
       V = lapply(DDt, function(m) tau*m + Ip)
-      Vinv = lapply(V, function(m) chol2inv(chol(m))) #dV=DDt
-      C = lapply(1:ncond, function(k) crossprod(D[[k]], Vinv[[k]]) %*% D[[k]])
-      C2 = lapply(C, function(m) m %*% m)
+      Vinv = lapply(V, function(m) chol2inv(cholCpp(m))) #dV=DDt
+      C = lapply(1:ncond, function(k) crossprodCpp(D[[k]], Vinv[[k]]) %*Cpp% D[[k]])
+      C2 = lapply(C, function(m) m %*Cpp% m)
       
       tmp = ifelse((lklMethod == "REML"), N - ncond*p, N)
       
-      m_list = lapply(1:ncond, function(k) Vinv[[k]] %*% D[[k]] %*% C[[k]] %*% crossprod(D[[k]], Vinv[[k]]) %*% R[[k]])####
-      Vinv_R = lapply(1:ncond, function(k) crossprod(t(Vinv[[k]]),R[[k]]))
+      m_list = lapply(1:ncond, function(k) Vinv[[k]] %*Cpp% D[[k]] %*Cpp% C[[k]] %*Cpp% crossprodCpp(D[[k]], Vinv[[k]]) %*Cpp% R[[k]])####
+      Vinv_R = lapply(1:ncond, function(k) crossprodCpp(t(Vinv[[k]]),R[[k]]))
       hes1 = sum(sapply(m_list, matTr2)) / sum(sapply(Vinv_R, matTr2))
       
-      m_list = lapply(1:ncond, function(k) Vinv[[k]] %*% DDt[[k]] %*% Vinv[[k]] %*% R[[k]])####
+      m_list = lapply(1:ncond, function(k) Vinv[[k]] %*Cpp% DDt[[k]] %*Cpp% Vinv[[k]] %*Cpp% R[[k]])####
       hes2 = sum(sapply(m_list, matTr2)) / sum(sapply(Vinv_R, matTr2))
       
       tmp2 = Reduce("+", lapply(1:ncond, function(k) n[k] * C2[[k]]))
@@ -104,17 +104,17 @@ function(x0, D, r, control = NULL) {
       
       ##for REML
       if (lklMethod == "REML") {
-        C3 = lapply(C, function(m) crossprod(t(m), m) %*% m)
+        C3 = lapply(C, function(m) crossprodCpp(t(m), m) %*Cpp% m)
         tmp1 = Reduce("+", lapply(1:ncond, function(k) n[k] * C[[k]]))
         tmp3 = Reduce("+", lapply(1:ncond, function(k) n[k] * C3[[k]]))
-        val = val + matTr(solve(tmp1), (2 * tmp3 - tmp2))
+        val = val + matTr(solveCpp(tmp1), (2 * tmp3 - tmp2))
       }
       return(as.numeric(val))
     }
     
     tau = newton(x0, lb, ub, f, g, h, tol=tol)$solution
     V = lapply(DDt, function(m) tau*m + Ip)
-    m_list = lapply(1:ncond, function(k) chol2inv(chol(V[[k]])) %*% R[[k]])
+    m_list = lapply(1:ncond, function(k) chol2inv(cholCpp(V[[k]])) %*Cpp% R[[k]])
     
     tmp = sum(sapply(m_list, matTr2))
     

@@ -29,7 +29,7 @@ function(se0, sg0, D, r, n_vec, control=NULL){
         Rm[[loop_cond]] = Rm[[loop_cond]] +  tmp[, i] %o% tmp[, i]
       }
     }
-    DtD = lapply(1:ncond, function(k) D[[k]] %*% t(D[[k]]))
+    DtD = lapply(1:ncond, function(k) D[[k]] %*Cpp% t(D[[k]]))
     
     gap = 1
     sg = sg0
@@ -45,7 +45,7 @@ function(se0, sg0, D, r, n_vec, control=NULL){
       # print(cnt)
       cnt = cnt + 1
       
-      SS = lapply(1:ncond, function(k) solve(sg * DtD[[k]] + se*Ip) %*% Rm[[k]] )
+      SS = lapply(1:ncond, function(k) solveCpp(sg * DtD[[k]] + se*Ip) %*Cpp% Rm[[k]] )
       tmp0 = lapply(SS, matTr)
       tmp0 = Reduce("+", tmp0)
       
@@ -57,7 +57,7 @@ function(se0, sg0, D, r, n_vec, control=NULL){
           tmp = min(diag(tmp1))
           tmp = min(se, tmp)
           tmp1 = tmp1 - diag(rep(tmp, p))
-          tmp2[[loop_cond]] = solve(D[[loop_cond]]) %*% tmp1  
+          tmp2[[loop_cond]] = solveCpp(D[[loop_cond]]) %*Cpp% tmp1  
         }
         
         tmp3 = lapply(tmp2, function(A) mean(diag(A)))      
@@ -71,7 +71,7 @@ function(se0, sg0, D, r, n_vec, control=NULL){
           tmp = min(diag(tmp1))
           tmp = min(sg, tmp)
           tmp1 = tmp1 - diag(rep(tmp, p))
-          tmp2[[loop_cond]] = solve(D[[loop_cond]]) %*% tmp1  
+          tmp2[[loop_cond]] = solveCpp(D[[loop_cond]]) %*Cpp% tmp1  
         }
         
         tmp3 = lapply(tmp2, function(A) mean(diag(A)))  

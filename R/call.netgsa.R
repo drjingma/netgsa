@@ -19,10 +19,10 @@ call.netgsa <-
       xx[[i]] = x[, (y==i)]
     }
     
-    DInv = lapply(D, lapply, solve)
+    DInv = lapply(D, lapply, solveCpp)
     DDt = lapply(D, lapply, tcrossprod) # D %*% t(D)
-    DtD = lapply(D, lapply, crossprod) # t(D) %*% D
-    DtDInv = lapply(DtD, lapply, solve)
+    DtD = lapply(D, lapply, crossprodCpp) # t(D) %*% D
+    DtDInv = lapply(DtD, lapply, solveCpp)
     
     #Initialzing pvalues of each test
     pvals = matrix(0, npath, 1)
@@ -32,7 +32,7 @@ call.netgsa <-
     ##------------------
     beta = vector("list", ncond)
     for (i in 1:ncond){
-      beta[[i]] = (1/n_vec[i]) * as.matrix(bdiag(DInv[[i]])) %*% rowSums(xx[[i]])
+      beta[[i]] = (1/n_vec[i]) * as.matrix(bdiag(DInv[[i]])) %*Cpp% rowSums(xx[[i]])
     }
     
     ##-----------------

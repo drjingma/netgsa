@@ -3,7 +3,7 @@ matTr <- function(a,b) {
   if (!identical(dim(a), dim(b))){
     stop("Dimensions do not match!")
   } else {
-    crossprod(as.vector(a), as.vector(t(b)))
+    crossprodCpp(as.vector(a), as.vector(t(b)))
   }
 }
 

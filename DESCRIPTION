@@ -2,7 +2,7 @@ Package: netgsa
 Type: Package
 Title: Network-Based Gene Set Analysis
 Version: 3.1.0
-Date: 2019-03-12
+Date: 2019-09-16
 Author: Jing Ma, Ali Shojaie and Kun Yue
 Maintainer: Jing Ma <jingma@fredhutch.org>
 Description: Carry out Network-based Gene Set Analysis by incorporating external information about interactions among genes, as well as novel interactions learned from data.
@@ -23,9 +23,12 @@ Imports:
 	org.Hs.eg.db,
 	quadprog, 
 	RCy3,
-	rlang
+	rlang,
+	Rcpp (>= 1.0.2),
+	RcppEigen (>= 0.3.3.5.0)
 Suggests: knitr, MASS, rmarkdown
 License: GPL (>=2)
+LinkingTo: Rcpp, RcppEigen
 LazyLoad: yes
 LazyData: true
 VignetteBuilder: knitr

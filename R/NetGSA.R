@@ -104,7 +104,7 @@ NetGSA <-
       
     } else {
       #Undirected gaussian graphical model
-      D <- lapply(A, lapply, function(b) t(chol(pseudoinverse(diag(1,nrow(b)) - b)))) 
+      D <- lapply(A, lapply, function(b) t(cholCpp(pseudoinverse(diag(1,nrow(b)) - b)))) 
     }
     
     output <- call.netgsa(D, x, group, pathways, varEstCntrl)
@@ -144,4 +144,8 @@ reshapePathways <- function(pathways){
   res <- data.table::setDT(melt(pathways, varnames = c("pathway", "gene")))
   res[, c("pathway", "gene") := .(as.character(pathway), as.character(gene))]
   return(res[res$value == 1,][,c("pathway", "gene")])
+}
+
+`%*Cpp%` <- function(x, y){
+  matMult(x,y)
 }

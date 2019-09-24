@@ -7,7 +7,7 @@ function(A, zeta=0.01){
     Adeg[Adeg==0] = 1
     AdegInv = (Adeg + zeta)^(-0.5)
     Lunnorm = diag(Adeg) - A
-    Lnorm = diag(AdegInv) %*% A %*% diag(AdegInv)
+    Lnorm = diag(AdegInv) %*Cpp% A %*Cpp% diag(AdegInv)
     
     return(list(Lunnorm = Lunnorm, Lnorm = Lnorm))
   }

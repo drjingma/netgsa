@@ -9,8 +9,8 @@ function(s2g, s2e, D, DDt, DtDInv, n_vec, B, beta){
   ##calculate the empirical covariance matrix Kmat
   ## Sigma is W in the notes. 
   Sigma = lapply(DDt, lapply, function(ix) s2e * diag(1, nrow(ix)) + s2g * ix)
-  SigmaInv = lapply(Sigma, lapply, function(ix) chol2inv(chol(ix)))
-  SigmaInvD = lapply(1:ncond, function(j) mapply(function(a,b) crossprod(a,b), SigmaInv[[j]], DDt[[j]], SIMPLIFY = FALSE))
+  SigmaInv = lapply(Sigma, lapply, function(ix) chol2inv(cholCpp(ix)))
+  SigmaInvD = lapply(1:ncond, function(j) mapply(function(a,b) crossprodCpp(a,b), SigmaInv[[j]], DDt[[j]], SIMPLIFY = FALSE))
   SinvSinv = lapply(SigmaInv, sapply, function(ix) matTr(ix, ix))
   SinvDSinvD = lapply(SigmaInvD, sapply, function(ix) matTr(ix, ix))
   SinvSinvD = lapply(1:ncond, function(j) mapply(function(a,b) matTr(a,b), SigmaInv[[j]], SigmaInvD[[j]]))
@@ -19,16 +19,16 @@ function(s2g, s2e, D, DDt, DtDInv, n_vec, B, beta){
   EH22 = 0.5*sum(sapply(SinvSinv,sum))
   
   Kmat = matrix(c(EH11, EH12, EH12, EH22), 2, 2, byrow = TRUE)
-  KmatInv = solve(Kmat)
+  KmatInv = solveCpp(Kmat)
   
   for (rr in 1:npath){  	   
     ##obtain the contrast matrix L for a given pathway
-    LN_list = lapply(1:ncond, function(j) crossprod(B[rr,], as.matrix(bdiag(D[[j]]))) * B[rr,])
+    LN_list = lapply(1:ncond, function(j) crossprodCpp(B[rr,], as.matrix(bdiag(D[[j]]))) * B[rr,])
     
     ##calculate ll' and l(Lambda'Lambda)^{-1}l' for each row of L
     llt <- sapply(1:ncond,function(j) tcrossprod(LN_list[[j]])/n_vec[j]) 
-    lDtDlt <- sapply(1:ncond ,function(j) LN_list[[j]]%*%as.matrix(bdiag(DtDInv[[j]]))%*%t(LN_list[[j]])/n_vec[j])
-    Lbeta_full <- sapply(1:ncond, function(j) crossprod(t(LN_list[[j]]), beta[[j]]))
+    lDtDlt <- sapply(1:ncond ,function(j) LN_list[[j]]%*Cpp%as.matrix(bdiag(DtDInv[[j]]))%*Cpp%t(LN_list[[j]])/n_vec[j])
+    Lbeta_full <- sapply(1:ncond, function(j) crossprodCpp(t(LN_list[[j]]), beta[[j]]))
     Lbeta <- Lbeta_full[-1] - Lbeta_full[-ncond]
     
     ##construct LCL' matrix
@@ -50,13 +50,13 @@ function(s2g, s2e, D, DDt, DtDInv, n_vec, B, beta){
     q = rankMatrix(L_mat)		
     
     ##get the test statistic
-    teststat[rr] = (t(Lbeta) %*% solve(LCL) %*% Lbeta)/q
+    teststat[rr] = (t(Lbeta) %*Cpp% solveCpp(LCL) %*Cpp% Lbeta)/q
     
     ##find projection P and diagonal D such that LCL' = P'DP
     D_diag <- eigen(LCL)$values
     
     gm <- lapply(1:q, function(j) c(llt[j]+llt[j+1], lDtDlt[j] + lDtDlt[j+1]))
-    vm <- sapply(1:q, function(j) (2*D_diag[j]^2) / (t(gm[[j]]) %*% KmatInv %*% gm[[j]] ))
+    vm <- sapply(1:q, function(j) (2*D_diag[j]^2) / (t(gm[[j]]) %*Cpp% KmatInv %*Cpp% gm[[j]] ))
     Em <- sum(sapply(vm, function(a) ifelse(a>2, a/(a-2), 0)))
     
     ##The first degree of freedom is q. The second degree of freedom is df. 
