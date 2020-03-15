@@ -57,6 +57,7 @@ he_method = function(n, D, DtD, resid, control=NULL){
     # condition K:
     cond_k_sample = function(k){
       nk = dim(resid[[k]])[2]
+      if(!is.null(control$sample_seeds)){set.seed(control$sample_seeds[1])} ##MH Added Sample seed
       nk_index = sample(1:nk, size = round(ratio*nk, 0), replace = F)
       nk_s = length(nk_index)
       resid_k_s = resid[[k]][, nk_index]
@@ -68,6 +69,7 @@ he_method = function(n, D, DtD, resid, control=NULL){
     n_s = dim(temp)[2]
     
     weight_normp = sqrt(colSums((t(temp)-colMeans(temp))^2))  
+    if(!is.null(control$sample_seeds)){set.seed(control$sample_seeds[2])} ##MH Added Sample seed
     index_p = sample(1:p, size = round(p*(p_sample), 0), replace=F, prob = weight_normp)
     resid_s = lapply(1:ncond, function(k) resid_s[[k]][index_p,])
     p_s = length(index_p)
