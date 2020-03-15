@@ -37,7 +37,7 @@ prepareAdjacencyMatrixDB(x, group, databases = NULL, cluster = NULL,
   In the case of conflicting information between \code{file_ne} and edges identified in a database, user non-edges are used. That is if the user specifies A->B in \code{file_ne}, but there is an edge between A->B in KEGG, the information in KEGG will be ignored and A->B will be treated as a non-edge. In the case where the graph is undirected everything will be converted to an undirected edge or non-edge. Thus if the user specifies A->B as a directed non-edge it will be changed to an undirected non-edge if the graph is undirected. See Details for more information.
   }
   
-  \item{lambda_c}{(Non-negative) a constant multiplied to the tuning parameter \code{lambda} needed for estimating the edge weights. By default, \code{lambda_c} is set to 1. See \code{\link{netEst.undir}} and \code{\link{netEst.dir}} for more details.}
+  \item{lambda_c}{(Non-negative) a vector or constant. \code{lambda_c} is multiplied by a constant depending on the data to determine the actual tuning parameter, \code{lambda}, used in estimating the network. If \code{lambda_c} is a vector, the optimal \code{lambda} will be chosen from this vector using \code{\link{bic.netEst.undir}}. Note that \code{lambda} is only used if the network is undirected. If the network is directed, the default value in \code{\link{netEst.dir}} is used instead . By default, \code{lambda_c} is set to 1. See \code{\link{netEst.undir}} and \code{\link{netEst.dir}} for more details.}
   
   \item{eta}{(Non-negative) a small constant needed for estimating the edge weights. By default, \code{eta} is set to 0.5. See \code{\link{netEst.undir}} for more details.}
 }
