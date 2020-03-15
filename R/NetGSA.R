@@ -8,6 +8,7 @@ NetGSA <-
     sampling = FALSE,
     sample_n = NULL,
     sample_p = NULL, 
+    sample_seeds = NULL, #Sample seeds, first entry for n second for p
     minsize=5,
     eta=0.1,           
     lim4kappa=500
@@ -24,9 +25,24 @@ NetGSA <-
     # Assume the adj matrix is always block diagonal; It has one block in the worst case. 
     # Also add dimnames onto matrix. This automatically works with clustering or no clustering
     A_mat <- lapply(A, function(a) {a_full <- as.matrix(bdiag(a))
-                                    dimnames(a_full) <- list(Reduce(c, lapply(a, rownames)), Reduce(c, lapply(a, colnames)))
+                                    dimnames(a_full) <- list(do.call(c, lapply(a, rownames)), do.call(c, lapply(a, colnames)))
                                     return(a_full)
                                     })
+    
+    #If any of these are out of order, reorder
+    outoforder <- vapply(A_mat, function(Ai, data) { 
+                            if(!setequal(rownames(Ai), rownames(data)))  stop("Adjacency matrices and data do not contain same list of genes")
+                            else if(all(rownames(Ai) == rownames(data))) return(FALSE)
+                            else                                         return(TRUE)
+                          }, FUN.VALUE = logical(1), data = x)
+    if(any(outoforder)){
+      order <- rownames(A_mat[[1]])
+      A_mat <- lapply(A_mat, function(Ai) Ai[order, order])
+      x <- x[order,]
+      pathways <- pathways[,order]
+    }
+    
+    
     if (max(sapply(lapply(A_mat,abs),sum))==0) {
       warning("No network interactions were found! Check your networks!")
     }
@@ -50,19 +66,10 @@ NetGSA <-
     if (n<10){
       warning("The sample size is too small! Use NetGSA at your discretion!")
     }
-    
-    #If any of these are out of order, reorder
-    outoforder <- vapply(A_mat, function(Ai, data) { 
-                          if(!setequal(rownames(Ai), rownames(data)))  stop("Adjacency matrices and data do not contain same list of genes")
-                          else if(all(rownames(Ai) == rownames(data))) return(FALSE)
-                          else                                         return(TRUE)
-                        }, FUN.VALUE = logical(1), data = x)
-    if(any(outoforder)){
-      order <- rownames(A_mat[[1]])
-      A_mat <- lapply(A_mat, function(Ai) Ai[order, order])
-      x <- x[order,]
+
+    if (!is.null(sample_seeds) & ! (is.numeric(sample_seeds) & length(sample_seeds) == 2)){
+      stop("Sample seeds must be NULL or numeric vector of length 2")
     }
-    
     ##-----------------
     ##setting up control parameters for the var estimation procedures
     varEstCntrl = list(lklMethod = lklMethod,                    
@@ -70,6 +77,7 @@ NetGSA <-
                        sampling = sampling,
                        ratio = sample_n,
                        p_sample = sample_p,
+                       sample_seeds = sample_seeds,
                        lb = 0.5,           
                        ub = 100,           
                        tol = 0.01)         
@@ -141,7 +149,7 @@ NetGSA <-
 # Helper functions -----------------------------------------------------------------
 
 reshapePathways <- function(pathways){
-  res <- data.table::setDT(melt(pathways, varnames = c("pathway", "gene")))
+  res <- data.table::setDT(reshape2::melt(pathways, varnames = c("pathway", "gene")))
   res[, c("pathway", "gene") := .(as.character(pathway), as.character(gene))]
   return(res[res$value == 1,][,c("pathway", "gene")])
 }

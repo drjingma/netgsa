@@ -39,7 +39,10 @@ function(s2g, s2e, D, DDt, DtDInv, n_vec, B, beta) {
     Lbeta_full <- sapply(1:ncond, function(j) crossprodCpp(LN[[j]][rr,], beta[[j]]))
     
     g = matrix(c(sum(llt), sum(lDtDlt)), 2, 1)
+    ### MH TO DELETE:
+    #s2g = 0.9138533; s2e = 0; print(paste0("Pathway number: ", rr)); print("....Manually using s2g and s2e...")
     LC11Lprime = s2g * g[1] + s2e * g[2]
+    #print(LC11Lprime); print(paste0("g[1] = ", g[1])); print(paste0("g[2] = ", g[2]));
 
     #test statistic 
     num.tstat[rr] =  Lbeta_full[2] - Lbeta_full[1]

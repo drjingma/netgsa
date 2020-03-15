@@ -6,8 +6,10 @@ prepareAdjacencyMatrixDB <-
            file_e=NULL,  
            file_ne=NULL,
            lambda_c=1,
+           penalize_diag = TRUE,
            eta=0.5
   ) {
+    lambda_c = sort(lambda_c, decreasing = TRUE)
     genes <- setNames(gsub(".*:(.*)", "\\1", rownames(X)), gsub("(.*):.*", "\\1", rownames(X)))
                       
     user_info       <- checkUserEdges(file_e, file_ne)
@@ -52,27 +54,37 @@ prepareAdjacencyMatrixDB <-
       if(p > 2500) cluster <- TRUE
       else         cluster <- FALSE
     }
-    
+  
     #Can only cluster if we have information
     if(cluster & !all(net_info$ones == 0)){
-      net_clusters <- obtainClusters(net_info$ones)
+      net_clusters <- obtainClusters(net_info$ones, rownames(X))
     } else{
       net_clusters <- NULL
     }
 
-    #Instead of network[[condition]][[Adj]] we want network[[Adj]][[condition]]
-    network <- lapply(unique(group), estimateNetwork, X, group, net_info, n, p, lambda_c, eta, net_clusters)
-    network_reshaped  <- reshapeNetwork(network)
-      
-      #Reduce(function(x,y) Map(function(x2, y2) {if(identical(class(x2), "list") & !identical(class(y2), "list"))          c(x2, list(y2))
-                         #                                            else if(identical(class(x2), "matrix") & identical(class(y2), "matrix"))  list(list(x2), list(y2))
-                         #                                            else                                                                      c(list(x2), list(y2))}, x, y), network)
-    network_reshaped2 <- lapply(network_reshaped, setNames, unique(group))
-    network_reshaped2[["Adj"]] <- c(network_reshaped2[["Adj"]], list("edgelist" = edgeL_freq_usr)) #Also add on edgelist so we can pass through to plotting function
-    return(network_reshaped2)
-    
-  }
+    # Each row has same lambda, its just rescaled for each cluster based on # of genes in that cluster and # of obs for group
+    network <- lapply(unique(group), function(g) {estimateNetwork(grp = g, X = X, group = group, net_info = net_info, 
+                                                                  n = n, p = p, lambda_c = lambda_c, eta = eta, 
+                                                                  net_clusters = net_clusters, penalize_diag = penalize_diag)})
+    network <- rbindlist(network)
 
+    if(!net_info$directed){
+      empcov <- cov(t(X)) #Could either do this quick calc or store one for each group/lambda combo   
+      network[, c("bic", "df") := {calcBIC(invcov[[1]], empcov, n[group])}, by = .(group, lambda)]
+      network <- network[,.SD[which.min(bic)], by = group]
+    }
+    
+    # For directed, should only return 1 row per condition. We don't test multiple lambdas
+    stopifnot(nrow(network) == length(unique(group)))
+    ugrp <- unique(group)
+    Adj_mats    <- setNames(lapply(ugrp, function(grp) network[group == grp][["Adj"]][[1]]), ugrp)
+    invcov_mats <- setNames(lapply(ugrp, function(grp) network[group == grp][["invcov"]][[1]]), ugrp)
+    lambda_l    <- setNames(lapply(ugrp, function(grp) network[group == grp][["lambda_l"]][[1]]), ugrp)
+
+    result <- list(Adj = c(Adj_mats, list("edgelist" = edgeL_freq_usr)), invcov = invcov_mats, lambda = lambda_l)
+    return(result)
+    
+}
 
 
 # Helper functions -----------------------------------------------------------------
@@ -184,7 +196,7 @@ convertEdgeListToZeroOne <- function(edgelist, non_edges, genes, genes_not_in_db
                                                                      paste0(base_id_dest, ":", base_gene_dest))][, c("base_id_src", "base_id_dest") := NULL]
   non_edges        <- if(!is.null(non_edges))        non_edges[, c("base_gene_src", "base_gene_dest") := .(paste0(base_id_src, ":",  base_gene_src),
                                                                      paste0(base_id_dest, ":", base_gene_dest))][, c("base_id_src", "base_id_dest") := NULL]
-  
+
   # Start by removing any user specified non_edges if we see them
   if(!is.null(non_edges)){
     #Warn if conflict between non_edges and edgelist. Say we'll use user non-edges
@@ -212,7 +224,7 @@ convertEdgeListToZeroOne <- function(edgelist, non_edges, genes, genes_not_in_db
     # If directed, then no undirected edges so can simply return the ones_weighted, ones, and zeros. If undirected need to edit a little
     # Make any directed edges undirected and give same weight
     if(!directed){
-      #Faster than x + t(x)
+      #Faster than x + t(x). Getting directed edges
       additional_dir_edges <- edgelist[, is_undirected := edgelist[edgelist, .(is_undirected = max(!is.na(x.base_gene_src))), on = .(base_gene_src = base_gene_dest, base_gene_dest = base_gene_src), by = .EACHI][["is_undirected"]]][is_undirected == 0]
       
       #Removing non_edges so we don't accidently overwrite these. We remove both directions from the user specified non_edges
@@ -260,8 +272,8 @@ convertEdgeListToZeroOne <- function(edgelist, non_edges, genes, genes_not_in_db
   # Otherwise, we dont have edges so set ones to be all 0 (assumes we searched through DB). Directed FALSE. Zeros is all ones
   else{
     ones_freq   <- ones <- matrix(0, nrow = length(genes), ncol = length(genes), dimnames = list(genes, genes))
-    zeros       <- matrix(1, nrow = length(genes), ncol = length(genes), dimnames = list(genes, genes))
-    diag(zeros) <- 0
+    zeros       <- matrix(0, nrow = length(genes), ncol = length(genes), dimnames = list(genes, genes))
+    #diag(zeros) <- 0
     directed <- FALSE
   }
   
@@ -270,28 +282,74 @@ convertEdgeListToZeroOne <- function(edgelist, non_edges, genes, genes_not_in_db
 }
 
 #Function to get the clusters for a 0-1 Adjacency matrix
-obtainClusters <- function(A){
+obtainClusters <- function(A, order){
+
   #Converting to undirected for purposes of clustering
   A_graph <- igraph::as.undirected(igraph::graph_from_adjacency_matrix(A))
-  
-  cluster_methods_list  <- list(igraph::cluster_walktrap, igraph::cluster_leading_eigen, igraph::cluster_fast_greedy, igraph::cluster_label_prop, igraph::cluster_infomap, igraph::cluster_louvain)
-  
-  
-  cluster_method_info   <- rbindlist(lapply(cluster_methods_list, analyzeClusterMethod, graph = A_graph), use.names = TRUE, fill = TRUE)
-  
-  #Choose method with lowest edge-loss among methods with max cluster size < 1000. If tied choose one with lowest max cluster. If still tied, choose random one
-  #   If all > 1000 choose with smallest max cluster size
-  if(all(cluster_method_info$max_cluster_size > 1000)){
-    best_membership <- cluster_method_info[sample(which(max_cluster_size == min(max_cluster_size)), 1), membership][[1]] #Random if ties
-  } else{
-    best_membership <- cluster_method_info[max_cluster_size < 1000][which(perc_lost_edges == min(perc_lost_edges))][sample(which(max_cluster_size == min(max_cluster_size)),1), membership][[1]] #Random if ties
-  }
 
-  #Combining clusters of size 1 into one big cluster
-  members_size_1 <- as.numeric(names(Filter(function(x) x == 1, table(best_membership))))
-  if(length(members_size_1) != 0) best_membership[best_membership %in% members_size_1] <- min(members_size_1)
+  ccs <- igraph::components(A_graph)$membership
+
+  #Test ccs
+  #ccs <- setNames(sample(1:3, igraph::vcount(A_graph), replace = TRUE, prob = c(0.4, 0.4, 0.2)), names(igraph::V(A_graph)))
+  ccs_tbl <- table(ccs)
+  ccs_to_cluster <- as.numeric(names(ccs_tbl[which(ccs_tbl > 1000)]))
+
+  #Within big connected components, perform clustering
+  clustered_ccs <- lapply(ccs_to_cluster, function(c){
+    subg <- igraph::induced_subgraph(A_graph, names(ccs[ccs == c]))
+
+    cluster_methods_list  <- list(igraph::cluster_walktrap, igraph::cluster_leading_eigen, igraph::cluster_fast_greedy, igraph::cluster_label_prop, igraph::cluster_infomap, igraph::cluster_louvain)
+    cluster_method_info   <- rbindlist(lapply(cluster_methods_list, analyzeClusterMethod, graph = subg), use.names = TRUE, fill = TRUE)
+
+    #Choose method with lowest edge-loss among methods with max cluster size < 1000. If tied choose one with lowest max cluster. If still tied, choose random one
+    #   If all > 1000 choose with smallest max cluster size
+    if(all(cluster_method_info$max_cluster_size > 1000)){
+      best_membership <- cluster_method_info[sample(which(max_cluster_size == min(max_cluster_size)), 1), membership][[1]] #Random if ties
+    } else{
+      best_membership <- cluster_method_info[max_cluster_size < 1000][which(perc_lost_edges == min(perc_lost_edges))][sample(which(max_cluster_size == min(max_cluster_size)),1), membership][[1]] #Random if ties
+    }
+
+    #Combining clusters of size 1 into one big cluster
+    members_size_1 <- as.numeric(names(Filter(function(x) x == 1, table(best_membership))))
+    if(length(members_size_1) != 0) best_membership[best_membership %in% members_size_1] <- min(members_size_1)
+
+    #Make names unique
+    return(setNames(paste0(c, "_", best_membership), names(best_membership)))
+  })
+
+  #Leftover ccs get put into their own clusters
+  leftover_ccs <- ccs[!ccs %in% ccs_to_cluster]
+
+  final_clusters <- c(leftover_ccs, do.call(c, clustered_ccs))
+  final_clusters <- setNames(as.numeric(factor(final_clusters)), names(final_clusters))
+  #Must be in same order as data rows
+  return(final_clusters[order])
   
-  return(best_membership)
+  # OLD
+  #====================================================
+  #Converting to undirected for purposes of clustering
+  # A_graph <- igraph::as.undirected(igraph::graph_from_adjacency_matrix(A))
+  # 
+  # ccs <- igraph::components(A_graph)$membership
+  # 
+  # cluster_methods_list  <- list(igraph::cluster_walktrap, igraph::cluster_leading_eigen, igraph::cluster_fast_greedy, igraph::cluster_label_prop, igraph::cluster_infomap, igraph::cluster_louvain)
+  # 
+  # 
+  # cluster_method_info   <- rbindlist(lapply(cluster_methods_list, analyzeClusterMethod, graph = A_graph), use.names = TRUE, fill = TRUE)
+  # 
+  # #Choose method with lowest edge-loss among methods with max cluster size < 1000. If tied choose one with lowest max cluster. If still tied, choose random one
+  # #   If all > 1000 choose with smallest max cluster size
+  # if(all(cluster_method_info$max_cluster_size > 1000)){
+  #   best_membership <- cluster_method_info[sample(which(max_cluster_size == min(max_cluster_size)), 1), membership][[1]] #Random if ties
+  # } else{
+  #   best_membership <- cluster_method_info[max_cluster_size < 1000][which(perc_lost_edges == min(perc_lost_edges))][sample(which(max_cluster_size == min(max_cluster_size)),1), membership][[1]] #Random if ties
+  # }
+  # 
+  # #Combining clusters of size 1 into one big cluster
+  # members_size_1 <- as.numeric(names(Filter(function(x) x == 1, table(best_membership))))
+  # if(length(members_size_1) != 0) best_membership[best_membership %in% members_size_1] <- min(members_size_1)
+  # 
+  # return(best_membership)
 }
 
 #Simple function to return important info from each cluster method
@@ -313,71 +371,91 @@ analyzeClusterMethod <- function(cluster_method, graph){
 #Doesnt like clusters of size 1 or 2.
 #Loops through clusters, subsets data and zero/one matrices and estimates the network.
 #For clusters of size 1 it returns a matrix(0,1,1)
-netEstClusts <- function(grp, X, group, net_info, n, p, lambda_c, eta, net_clusters){
+netEstClusts <- function(grp, X, group, net_info, n, lambda_c, eta, net_clusters, penalize_diag){
   net_info_clusts <- lapply(unique(net_clusters), function(clust){
                                 #Subsetting to clusters
                                 idxs       <- net_clusters == clust
-                                if(sum(idxs) == 1) return(list(Adj = matrix(0, sum(idxs), sum(idxs), dimnames = list(names(net_clusters[idxs]), names(net_clusters[idxs]))), invcov = matrix(0,sum(idxs), sum(idxs)), lambda = NA))
+                                # IMPORTANT:  Make sure this is same returned type as netEst.undir for multiple lambdas.
+                                #Right now only works for 1 lambda
+                                if(sum(idxs) == 1) {return(list(Adj = rep(list(matrix(0, sum(idxs), sum(idxs), dimnames = list(names(net_clusters[idxs]), names(net_clusters[idxs])))), length(lambda_c)), 
+                                                                invcov = rep(list(matrix(0,sum(idxs), sum(idxs), dimnames = list(names(net_clusters[idxs]), names(net_clusters[idxs])))), length(lambda_c)), 
+                                                                lambda = rep(list(NA), length(lambda_c))))}
 
                                 X_new      <- X[idxs, group == grp]
                                 zero_new   <- net_info$zeros[idxs, idxs]
                                 one_new    <- net_info$ones[idxs, idxs]
-                                lambda_new <- lambda_c*sqrt(log(sum(idxs))/n[grp])
-                                rho_new    <- 0.1*sqrt(log(sum(idxs))/n[grp])
-                              
                                 
+                                ### Return directed
                                 if(net_info$directed){
-                                  return(netEst.dir(X_new, zero = zero_new, one = one_new, lambda=lambda_new))
+                                  return(netEst.dir(X_new, zero = zero_new, one = one_new))
+                                  
+                                ### Return undirected
                                 }else{
-                                  return(netEst.undir(X_new, zero = zero_new, one = one_new, lambda=lambda_new, rho=rho_new, eta=eta))
+                                  n = n[grp]; p = sum(idxs)
+                                  lambda_try = lambda_c*sqrt(log(p)/n)
+                                  #tuning_params <- getUndirTuningParams(X_new, zero = zero_new, one = one_new, lambda_c = lambda_c, n = n[grp], p = sum(idxs), eta = eta)
+                                  return(netEst.undir(X_new, zero = zero_new, one = one_new, lambda=lambda_try, rho=(0.1 * sqrt(log(p)/n)), penalize_diag = penalize_diag, eta=eta))
                                 }
                               })
   
-  #For now return as block diagonal
-  A_list <- lapply(net_info_clusts, function(x) x[["Adj"]])
-  #rnms   <- Reduce(c, lapply(A_list, function(x) rownames(x)))
-  #cnms   <- Reduce(c, lapply(A_list, function(x) colnames(x)))
-  #Adj    <- as.matrix(Matrix::bdiag(A_list))
-  #dimnames(Adj) <- list(rnms, cnms)
+  #For now return as list
+  # list of length lambda. So will give length(lambda) rows in our data.table
+  if(!net_info$directed){
+    A_list <- lapply(1:length(lambda_c), function(i) lapply(net_info_clusts, function(x) x[["Adj"]][[i]])) 
+    invcov <- lapply(1:length(lambda_c), function(i) lapply(net_info_clusts, function(x) x[["invcov"]][[i]]))
+    lambda <- lapply(1:length(lambda_c), function(i) lapply(net_info_clusts, function(x) x[["lambda"]][[i]]))
+  } else{
+    A_list <- list(lapply(net_info_clusts, function(x) x[["Adj"]]))
+    invcov <- list(lapply(net_info_clusts, function(x) x[["infmat"]])) #If directed, we call invcov even though its infmat for consistency w/ undirected
+    lambda <- list(lapply(net_info_clusts, function(x) x[["lambda"]]))
+    lambda_c <- NA #Directed uses built in lambdas, we never use lambda_c
+  }
+
+                   
+  # Data.table can store columns of lists
+  res = data.table(group = grp, lambda = lambda_c, Adj = A_list, invcov = invcov, lambda_l = lambda)
+  stopifnot(nrow(res) == length(lambda_c))
   
-  invcov <- lapply(net_info_clusts, function(x) x[["invcov"]])
-  
-  lambda <- lapply(net_info_clusts, function(x) x[["lambda"]])
-  
-  return(list(Adj = A_list, invcov = invcov, lambda = lambda))
+  return(res)
 }
   
 #Simple wrapper to estimateNetwork for given grp value in group
-estimateNetwork <- function(grp, X, group, net_info, n, p, lambda_c, eta, net_clusters = NULL) {
+estimateNetwork <- function(grp, X, group, net_info, n, p, lambda_c, eta, net_clusters = NULL, penalize_diag) {
   if(is.null(rownames(X))) dimnames(net_info$zeros) <- dimnames(net_info$ones) <- dimnames(net_info$ones_freq) <- NULL
   
   #No clustering
   if(is.null(net_clusters)){
     if(net_info$directed){
-      return(netEst.dir(X[, group == grp], zero = net_info$zeros, one = net_info$ones, lambda=lambda_c*sqrt(log(p)/n[grp])))
+      net_estd = netEst.dir(X[, group == grp], zero = net_info$zeros, one = net_info$ones)
+      res = data.table(group = grp, lambda = NA, Adj = list(net_estd$Adj), invcov = list(net_estd$infmat), lambda_l = list(net_estd$lambda))
+      return(res)
     }else{
-      return(netEst.undir(X[, group == grp], zero = net_info$zeros, one = net_info$ones, lambda=lambda_c*sqrt(log(p)/n[grp]), rho=0.1*sqrt(log(p)/n[grp]), eta=eta))
+      n2 = n[grp]
+      lambda_try = lambda_c*sqrt(log(p)/n2)
+      net_estd   = netEst.undir(X[, group == grp], zero = net_info$zeros, one = net_info$ones, lambda=lambda_try, rho=(0.1 * sqrt(log(p)/n2)), penalize_diag = penalize_diag, eta=eta)
+      A_list     = lapply(1:length(lambda_c), function(i) list(net_estd[["Adj"]][[i]]))
+      invcov     = lapply(1:length(lambda_c), function(i) list(net_estd[["invcov"]][[i]]))
+      lambda     = lapply(1:length(lambda_c), function(i) list(net_estd[["lambda"]][[i]]))
+      res = data.table(group = grp, lambda = lambda_c, Adj = A_list, invcov = invcov, lambda_l = lambda)
+      return(res)
     }
-    
     #Clustering
   } else{ 
-    return(netEstClusts(grp, X, group, net_info, n, p, lambda_c, eta, net_clusters))
+    obj <- netEstClusts(grp, X, group, net_info, n, lambda_c, eta, net_clusters, penalize_diag = penalize_diag)
+    return(obj)
   }
   
 }
 
-#Simple reshaping function since we want to go from network[[cond]][[A]] to network[[A]][[cond]]
-#For loop should be fine because we arent doing too many loops
-reshapeNetwork <- function(network){
-  l1 <- length(network[[1]])
-  l2 <- length(network)
-  res <- setNames(rep(list(vector("list", length = l2)), times = l1), names(network[[1]]))
-  for (obj in 1:l1){
-    for (cond in 1:l2){
-      if (identical(class(network[[cond]][[obj]]), "list")) res[[obj]][[cond]] <- network[[cond]][[obj]]
-      else                                                  res[[obj]][[cond]] <- list(network[[cond]][[obj]])
-      
-    }
-  }
-  return(res)
+# Calculate BIC
+calcBIC <- function(invcov_list, empcov, n, eps = 1e-08){
+  siginv <- as.matrix(bdiag(invcov_list))
+  stopifnot(class(invcov_list) == "list")
+  rownames(siginv) <- colnames(siginv) <- do.call(c, lapply(invcov_list, rownames))
+  siginv <- siginv[rownames(empcov), colnames(empcov)]
+  
+  no.edge = sum(abs(siginv) > eps) - ncol(siginv)
+  #Faster matrix trace using entrywise product
+  bic = sum(t(empcov) * siginv) - determinant(siginv, logarithm = T)$modulus + log(n) * no.edge/(2 * n)
+  return(list(bic = bic, df = no.edge))
 }
