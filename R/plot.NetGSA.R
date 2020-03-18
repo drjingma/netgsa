@@ -92,7 +92,7 @@ plot_igraph.NetGSA <- function(edges_pathways, pathway_results, pathway_gene_map
   if(cytoscape_open){
     layout_mat <- matrix(c(1,1,2,3), nrow = 2)
     layout(layout_mat, widths = c(8,2))
-    par(mai=c(0.5, 0.5, 0.5, 0.5))
+    par(mai=c(0, 0, 0.5, 0))
     plot(ig, vertex.color = teststat_rgb_cols, vertex.frame.color = fdr_rgb_vals, vertex.size = vertex_sizes, vertex.label.cex = 0.5, layout = l) 
     
     teststat_image <- as.raster(matrix(rev(colorRampPalette(teststat_cols)(20)), ncol=1))
