@@ -211,9 +211,9 @@ makePathwayEdges <- function(gene_edges, pathway_gene_map){
 createNestedNetwork <- function(edges_pathways, edges_all, pathway_vertices, main){
   
   #Copy so doesn't update outside of function
-  edges_pathways   <- copy(edges_pathways)[, c("src_pathway", "dest_pathway") := lapply(.SD, function(x) gsub(" ", "\\ ", x, fixed = TRUE)), .SDcols = c("src_pathway", "dest_pathway")]
-  edges_all        <- copy(edges_all)[, c("base_gene_src", "base_gene_dest", "src_pathway", "dest_pathway") := lapply(.SD, function(x) gsub(" ", "\\ ", x, fixed = TRUE)), .SDcols = c("base_gene_src", "base_gene_dest", "src_pathway", "dest_pathway")]
-  pathway_vertices <- copy(pathway_vertices)[, c("pathway", "gene") := lapply(.SD, function(x) gsub(" ", "\\ ", x, fixed = TRUE))]
+  edges_pathways   <- copy(edges_pathways)[, c("src_pathway", "dest_pathway") := lapply(.SD, function(x) gsub(" ", "\\ ", trimws(x), fixed = TRUE)), .SDcols = c("src_pathway", "dest_pathway")]
+  edges_all        <- copy(edges_all)[, c("base_gene_src", "base_gene_dest", "src_pathway", "dest_pathway") := lapply(.SD, function(x) gsub(" ", "\\ ", trimws(x), fixed = TRUE)), .SDcols = c("base_gene_src", "base_gene_dest", "src_pathway", "dest_pathway")]
+  pathway_vertices <- copy(pathway_vertices)[, c("pathway", "gene") := lapply(.SD, function(x) gsub(" ", "\\ ", trimws(x), fixed = TRUE))]
   
   pathways_edges_nnf     <- paste0(main, " ", edges_pathways$src_pathway, " pp ", edges_pathways$dest_pathway)
   no_edge_vertices_nnf   <- paste0(main, " ", setdiff(unique(pathway_vertices$pathway), unique(c(edges_pathways$src_pathway, edges_pathways$dest_pathway))))
