@@ -35,5 +35,5 @@ Mike Hellstern
 }
 
 \seealso{
-\code{\link{prepareAdjacencyMatrixDB}}
+\code{\link{prepareAdjMat}}
 }

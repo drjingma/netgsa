@@ -5,7 +5,7 @@
 \title{Convert edgelist and list of non-edges to zero/one adjacency matrices}
 
 \description{
-Convert edgelist and list of non-edges to zero/one matrices used in \code{netEst.dir} and \code{netEst.undir}. This is a helper function in \code{prepareAdjacencyMatrixDB} and should not be called by the user.
+Convert edgelist and list of non-edges to zero/one matrices used in \code{netEst.dir} and \code{netEst.undir}. This is a helper function in \code{prepareAdjMat} and should not be called by the user.
 }
 
 
@@ -43,5 +43,5 @@ Mike Hellstern
 }
 
 \seealso{
-\code{\link{prepareAdjacencyMatrixDB}}
+\code{\link{prepareAdjMat}}
 }

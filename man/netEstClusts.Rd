@@ -5,7 +5,7 @@
 \title{Estimates network for each cluster}
 
 \description{
-Estimates network using \code{netEst.dir} or \code{netEst.undir} for each cluster. This is a helper function in \code{prepareAdjacencyMatrixDB} and should not be called by the user.
+Estimates network using \code{netEst.dir} or \code{netEst.undir} for each cluster. This is a helper function in \code{prepareAdjMat} and should not be called by the user.
 }
 
 
@@ -50,5 +50,5 @@ Mike Hellstern
 }
 
 \seealso{
-\code{\link{prepareAdjacencyMatrixDB}}
+\code{\link{prepareAdjMat}}
 }

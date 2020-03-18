@@ -3,7 +3,7 @@
 \title{Check user edgelist for errors}
 
 \description{
-Read in user edgelist as data.table and check the column formatting and check for conflicting information. This is a helper function in \code{prepareAdjacencyMatrixDB} and should not be called by the user.}
+Read in user edgelist as data.table and check the column formatting and check for conflicting information. This is a helper function in \code{prepareAdjMat} and should not be called by the user.}
 
 \usage{
 checkUserEdges(edgelist, non_edges)
@@ -33,5 +33,5 @@ Mike Hellstern
 }
 
 \seealso{
-\code{\link{prepareAdjacencyMatrixDB}}
+\code{\link{prepareAdjMat}}
 }

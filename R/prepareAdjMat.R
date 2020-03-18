@@ -1,4 +1,4 @@
-prepareAdjacencyMatrixDB <-
+prepareAdjMat <-
   function(X, 
            group,         
            databases=NULL,

@@ -5,7 +5,7 @@
 \title{Estimate optimal gene clustering structure}
 
 \description{
-Tries six different clustering methods and chooses the one with the best results. This is a helper function in \code{prepareAdjacencyMatrixDB} and should not be called by the user.
+Tries six different clustering methods and chooses the one with the best results. This is a helper function in \code{prepareAdjMat} and should not be called by the user.
 }
 
 
@@ -19,7 +19,7 @@ obtainClusters(A)
 }
 
 \details{
-This function tries the six different clustering methods in igraph and chooses the best one. As stated in \code{prepareAdjacencyMatrixDB} the six methods evaluated are: \code{cluster_walktrap}, \code{cluster_leading_eigen}, \code{cluster_fast_greedy}, \code{cluster_label_prop}, \code{cluster_infomap}, and \code{cluster_louvain}. See \code{prepareAdjacencyMatrixDB} for how the best is chosen.
+This function tries the six different clustering methods in igraph and chooses the best one. As stated in \code{prepareAdjMat} the six methods evaluated are: \code{cluster_walktrap}, \code{cluster_leading_eigen}, \code{cluster_fast_greedy}, \code{cluster_label_prop}, \code{cluster_infomap}, and \code{cluster_louvain}. See \code{prepareAdjMat} for how the best is chosen.
 }
 
 
@@ -36,5 +36,5 @@ Mike Hellstern
 }
 
 \seealso{
-\code{\link{prepareAdjacencyMatrixDB}}
+\code{\link{prepareAdjMat}}
 }

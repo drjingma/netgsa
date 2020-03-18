@@ -139,14 +139,14 @@ In summary, the data that we'll need to run our pathway enrichment analysis is:
 
 ## Step 2: Pathway enrichment analysis
 
-Now that we have our data set-up properly we can begin with the pathway enrichment analysis. `netgsa` has two main functions. The first is `prepareAdjacencyMatrixDB` which searches for edges in public databases and uses this information to estimate the adjacency matrices needed for `NetGSA`. The second is `NetGSA` which performs network-based gene set analysis. We will go into further details about the usage of these functions below.
+Now that we have our data set-up properly we can begin with the pathway enrichment analysis. `netgsa` has two main functions. The first is `prepareAdjMat` which searches for edges in public databases and uses this information to estimate the adjacency matrices needed for `NetGSA`. The second is `NetGSA` which performs network-based gene set analysis. We will go into further details about the usage of these functions below.
 
 
-### prepareAdjacencyMatrixDB
+### prepareAdjMat
 
 After having the data set-up, the first step in pathway enrichment analysis with `netgsa` is to estimate the adjacency matrices. Remember, the rownames of the data matrix `X` must be named as `"GENE_ID:GENE_VALUE"` as in `"ENTREZID:7534"`. The `group` vector is defined as above.
 
-The `databases` argument can be either (1) the result of `obtainEdgeList` or (2) a character vector defining the databases to search. These are essentially the same thing, the only difference is that for the character vector method, `obtainEdgeList` is called inside `prepareAdjacencyMatrixDB` and cannot be saved. Since `prepareAdjacencyMatrixDB` queries the `graphite` databases when it is called and `graphite` databases can change overtime, this may not be desirable for reproducibility. Using the `obtainEdgeList` method, one can save the edgelist to ensure the same network information is used across iterations or in the future. In both methods, one must specify the databases to search. The options are the databases for homo spaiens available in `graphite`. These are:
+The `databases` argument can be either (1) the result of `obtainEdgeList` or (2) a character vector defining the databases to search. These are essentially the same thing, the only difference is that for the character vector method, `obtainEdgeList` is called inside `prepareAdjMat` and cannot be saved. Since `prepareAdjMat` queries the `graphite` databases when it is called and `graphite` databases can change overtime, this may not be desirable for reproducibility. Using the `obtainEdgeList` method, one can save the edgelist to ensure the same network information is used across iterations or in the future. In both methods, one must specify the databases to search. The options are the databases for homo spaiens available in `graphite`. These are:
 
 ```{r, echo = FALSE}
 as.character(graphite::pathwayDatabases()[graphite::pathwayDatabases()$species == "hsapiens","database"])
@@ -154,17 +154,17 @@ as.character(graphite::pathwayDatabases()[graphite::pathwayDatabases()$species =
 
 Note the `databases` argument is case sensitive so make sure to pass `"reactome"` and not `"Reactome"`.
 
-The `cluster` argument controls whether or not clustering is used when estimating the adjacency matrix. The default behavior is to use clustering if `p > 2,500`. However, the user can override this behavior by setting the `cluster` argument. `prepareAdjacencyMatrixDB` chooses the best clustering method from 6 possible methods in the `igraph` package. More details are provided in `?prepareAdjacencyMatrixDB`.
+The `cluster` argument controls whether or not clustering is used when estimating the adjacency matrix. The default behavior is to use clustering if `p > 2,500`. However, the user can override this behavior by setting the `cluster` argument. `prepareAdjMat` chooses the best clustering method from 6 possible methods in the `igraph` package. More details are provided in `?prepareAdjMat`.
 
-User specified edge and non-edge files are specified with the `file_e` and `file_ne` arguments respectively. For more information on the assumptions and how network information is incorporated from the database edgelists, the user edges, and the user non-edges see the Details section and `file_e` and `file_ne` parameters in  `?prepareAdjacencyMatrixDB`.
+User specified edge and non-edge files are specified with the `file_e` and `file_ne` arguments respectively. For more information on the assumptions and how network information is incorporated from the database edgelists, the user edges, and the user non-edges see the Details section and `file_e` and `file_ne` parameters in  `?prepareAdjMat`.
 
-It is also important to note that `prepareAdjacencyMatrixDB` will automatically choose the correct network estimation technique based on whether or not the graph is directed so no additional work is needed to determine undirected vs directed graphs. This is documented in `?prepareAdjacencyMatrixDB`.
+It is also important to note that `prepareAdjMat` will automatically choose the correct network estimation technique based on whether or not the graph is directed so no additional work is needed to determine undirected vs directed graphs. This is documented in `?prepareAdjMat`.
 
 Now let's get to some example code. Suppose we wanted to estimate the network for our example data using our known edges/non-edges and searching for edges in Reactome, KEGG, and BioCarta. Let's also use clustering to speed up computation. We could do this simply by:
 
 ```{r}
 database_search <- obtainEdgeList(rownames(x), c("kegg", "reactome", "biocarta"))
-network_info <- prepareAdjacencyMatrixDB(x, group, database_search,
+network_info <- prepareAdjMat(x, group, database_search,
                                          cluster = TRUE, file_e = "edgelist.txt", 
                                          file_ne = "nonedgelist.txt")
 ```
@@ -181,7 +181,7 @@ The total number of clusters can be identified with:
 length(network_info[["Adj"]][[1]])
 ```
 
-Note we cannot control cluster size which is why we try several methods and implement rules on which to choose. For more information see `?prepareAdjacencyMatrixDB`.
+Note we cannot control cluster size which is why we try several methods and implement rules on which to choose. For more information see `?prepareAdjMat`.
 
 ### NetGSA
 
@@ -191,7 +191,7 @@ Now that the adjacency matrices are assembled we can perform pathway inference u
 pathway_tests <- NetGSA(network_info[["Adj"]], x, group, pathways_mat)
 ```
 
-The returned value from `prepareAdjacencyMatrixDB` will always be in the correct format regardless of whether or not clustering is used, so one should always be able to pass `network_info[["Adj"]]` directly to `NetGSA`. The default is to use restriced maximum likelihood (REML) to calculate the variance component. However, this can be quite slow, so another option is to use the restricted Haseman-Elston regression (REHE) instead. This is beneficial since it allows for sampling so you can significantly increase the speed. For example:
+The returned value from `prepareAdjMat` will always be in the correct format regardless of whether or not clustering is used, so one should always be able to pass `network_info[["Adj"]]` directly to `NetGSA`. The default is to use restriced maximum likelihood (REML) to calculate the variance component. However, this can be quite slow, so another option is to use the restricted Haseman-Elston regression (REHE) instead. This is beneficial since it allows for sampling so you can significantly increase the speed. For example:
 
 ```{r}
 pathway_tests_rehe <- NetGSA(network_info[["Adj"]], x, group, pathways_mat, 
