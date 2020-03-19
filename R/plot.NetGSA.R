@@ -216,7 +216,9 @@ createNestedNetwork <- function(edges_pathways, edges_all, pathway_vertices, mai
   pathway_vertices <- copy(pathway_vertices)[, c("pathway", "gene") := lapply(.SD, function(x) gsub(" ", "\\ ", trimws(x), fixed = TRUE))]
   
   pathways_edges_nnf     <- paste0(main, " ", edges_pathways$src_pathway, " pp ", edges_pathways$dest_pathway)
-  no_edge_vertices_nnf   <- paste0(main, " ", setdiff(unique(pathway_vertices$pathway), unique(c(edges_pathways$src_pathway, edges_pathways$dest_pathway))))
+  no_edge_vertices       <- setdiff(unique(pathway_vertices$pathway), unique(c(edges_pathways$src_pathway, edges_pathways$dest_pathway)))
+  no_edge_vertices_nnf   <- if (length(no_edge_vertices) == 0) NULL
+                            else paste0(main, " ", no_edge_vertices)
   
   
   #Ones we want to link
