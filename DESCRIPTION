@@ -7,6 +7,7 @@ Author: Jing Ma, Ali Shojaie and Kun Yue
 Maintainer: Jing Ma <jingma@fredhutch.org>
 Description: Carry out Network-based Gene Set Analysis by incorporating external information about interactions among genes, as well as novel interactions learned from data.
 Depends: R (>= 3.5.0)
+biocViews:
 Imports: 
 	AnnotationDbi,
 	corpcor, 
