@@ -29,8 +29,8 @@ plot_cytoscape.NetGSA <- function(edges_pathways, edges_all, pathway_gene_map, p
   #Also adding edge weights incase we want that
   RCy3::setCurrentNetwork(network_ids$networks[1])
   edge_df             <- setnames(copy(edges_pathways)[, id := paste0(src_pathway, " (pp) ", dest_pathway)], "weight_sum", "weight")
-  RCy3::loadTableData(data = pathway_results, data.key.column = "pathway", table = "node", table.key.column = "name", network = "current")
-  RCy3::loadTableData(data = edge_df, data.key.column = "id", table = "edge", table.key.column = "name", network = "current")
+  RCy3::loadTableData(data = pathway_results, data.key.column = "pathway", table = "node", table.key.column = "name", network = network_ids$networks[1])
+  RCy3::loadTableData(data = edge_df, data.key.column = "id", table = "edge", table.key.column = "name", network = network_ids$networks[1])
   if(is.null(graph_layout)){
     graph_layout = 'force-directed defaultSpringCoefficient=0.00000004 defaultSpringLength=100'
   }
