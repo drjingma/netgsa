@@ -32,7 +32,7 @@ For a one-sample or two-sample test, the test statistic \eqn{T} for each gene se
 
 Estimation of the variance components (\eqn{\sigma^2_{\epsilon}} and \eqn{\sigma^2_{\gamma}}) can be done in several different ways after profiling out \eqn{\sigma^2_{\epsilon}}, including \code{REML/ML} which uses Newton's method or \code{HE/REHE} which is based on the Haseman-Elston regression method. The latter notes the fact that \eqn{Var(X)=\sigma^2_{\gamma}\Pi*\Pi' + \sigma^2_{\epsilon}I}, and uses an ordinary least squares to solve for the unknown coefficients after vectorizing both sides. In particular, \code{REHE} uses nonnegative least squares for the regression and therefore ensures nonnegative estimate of the variance components. Due to the simple formulation, \code{HE/REHE} also allows subsampling with respect to both the samples and the variables, and is recommended especially when the problem is large (i.e. large \eqn{p} and/or large \eqn{n}).
 
-The pathway membership information is stored in \code{pathways}, which should be a matrix of \eqn{npath} x \eqn{p}. See \code{\link{prepareAdjacencyMatrix}} for details on how to prepare a suitable pathway membership object.
+The pathway membership information is stored in \code{pathways}, which should be a matrix of \eqn{npath} x \eqn{p}. See \code{\link{prepareAdjMat}} for details on how to prepare a suitable pathway membership object.
 
 This function can deal with both directed and undirected networks, which are specified via the option \code{directed}. Note \code{NetGSA} uses slightly different procedures to calculate the influence matrices for directed and undirected networks. 
 In either case, the user can still apply \code{NetGSA} if only partial information on the adjacency matrices is available. The functions \code{netEst.undir} and \code{netEst.dir} provide details on how to estimate the weighted adjacency matrices from data based on available network information. 
@@ -57,7 +57,7 @@ Shojaie, A., & Michailidis, G. (2009). Analysis of gene sets based on the underl
 Ali Shojaie and Jing Ma
 }
 \seealso{
-\code{\link{prepareAdjacencyMatrix}}, \code{\link{netEst.dir}}, \code{\link{netEst.undir}}
+\code{\link{prepareAdjMat}}, \code{\link{netEst.dir}}, \code{\link{netEst.undir}}
 }
 \examples{
 library(glassoFast)
@@ -77,7 +77,7 @@ if (sum(is.na(rownames(sx)))>0){
   sx <- sx[-which(is.na(rownames(sx))),]
 }
 file_e <- system.file("extdata", "edgelist.txt", package = "netgsa")
-out <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, file_e, NULL)
+out <- prepareAdjMat(sx, group, pathways, FALSE, file_e, NULL)
 sx <- sx[match(colnames(out$B), rownames(sx)),]
 
 ncond <- length(unique(group))
