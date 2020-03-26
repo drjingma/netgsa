@@ -2,7 +2,7 @@ prepareAdjMat <-
   function(X, 
            group,         
            databases=NULL,
-           cluster=NULL,
+           cluster=TRUE,
            file_e=NULL,  
            file_ne=NULL,
            lambda_c=1,
