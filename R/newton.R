@@ -11,8 +11,15 @@ function(x0, lb, ub, f, g, h, alpha = 0.25, beta = 0.5, max.iter = 100, tol = 1e
       
       ## line search to pick the stepsize 
       size = 1
-      while ( (x + size * delta <=0) || (log(f(x + size * delta)) > log(f(x) + alpha * size * g(x) * delta)) ) {
+      lhs = f(x + size * delta)
+      rhs = f(x) + alpha * size * g(x) * delta
+      while ( (x + size * delta <=0) || lhs > rhs || (log(lhs) > log(rhs)) ) {
         size = beta * size
+        #Trying to minimize evaluation of f() and g():
+        if ( !(x + size * delta <=0) ){
+          lhs = f(x + size * delta)
+          rhs = f(x) + alpha * size * g(x) * delta
+        }
       }
       ## Update
       x.new = x + size * delta
