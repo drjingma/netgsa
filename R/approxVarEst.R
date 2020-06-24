@@ -5,10 +5,12 @@ function(se0, sg0, D, r, n_vec, control=NULL){
       tol = 0.01
       s2profile = "se"
       lklMethod = "REML"
+      maxIter = 100
     } else {
       tol = control$tol
       s2profile = control$s2profile
       lklMethod = control$lklMethod
+      maxIter = control$maxIter
     }
     
     matTr <- function(z) sum(diag(z))
@@ -38,7 +40,7 @@ function(se0, sg0, D, r, n_vec, control=NULL){
     ## Whether it's ML or REML
     lklConst = ifelse(lklMethod == "REML", N - ncond*p, N)
     
-    while (gap > tol) {
+    while (gap > tol & cnt <= maxIter) {
       sg0 = sg
       se0 = se
       
@@ -80,6 +82,7 @@ function(se0, sg0, D, r, n_vec, control=NULL){
       }
       
       gap = abs(sg - sg0) + abs(se - se0)
+      if(cnt == maxIter) warning(paste0("Maximum number of iterations reached for variance estimate convergence: ", maxIter))
     }
     
     return(list(s2e = se, s2g = sg, tau = tau, finalgap = gap, niter = cnt))
