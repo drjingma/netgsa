@@ -5,22 +5,25 @@ plot.NetGSA <- function(x, graph_layout = NULL, rescale_node = c(2,10), rescale_
   
   cytoscape_open      <- tryCatch({httr::GET("http://localhost:1234/v1/version")$status_code == 200}, error = function(e){return(FALSE)})
   
+  fdrCutoffCols <- list("0_005" = list(cutoffs = c(0, 0.05), cols = c("#FF0000", "#F74A4A")), "005_01" = list(cutoffs = c(0.05001, 1), cols = c("#F78F8F", "#F2B8B8")), 
+                        "01_02" = list(cutoffs = c(0.1001, 0.2), cols = c("#F7D7D7", "#FCE8E8")), "02_1" = list(cutoffs = c(0.2001, 1), cols = c( "#F7F5F5", "#F7F5F5")))
+  
   if(cytoscape_open){
-    cyto <- plot_cytoscape.NetGSA(edges_pathways, edges_all, x$graph$pathways, x$results, x$graph$gene.tests, graph_layout = graph_layout)
+    cyto <- plot_cytoscape.NetGSA(edges_pathways, edges_all, x$graph$pathways, x$results, x$graph$gene.tests, fdrCutoffCols = fdrCutoffCols, graph_layout = graph_layout)
     legend_title <- "Cytoscape plot legend"
   } else{
-    warning("For betting visualization results, please install and open Cytoscape")
+    warning("For better visualization results, please install and open Cytoscape")
     cyto <- NULL
     legend_title <- "Igraph plot legend"
   }
-  plotCytoLegend(x$results, legend_title, igraph = ! cytoscape_open)
-  plot_igraph.NetGSA(edges_pathways, x$results, x$graph$pathways, nodes_layout = cyto[["node_locations"]], cytoscape_open = cytoscape_open, graph_layout = graph_layout, rescale_node = rescale_node, rescale_label = rescale_label)
+  plotCytoLegend(x$results, fdrCutoffCols, legend_title, igraph = ! cytoscape_open)
+  plot_igraph.NetGSA(edges_pathways, x$results, x$graph$pathways, fdrCutoffCols = fdrCutoffCols, nodes_layout = cyto[["node_locations"]], cytoscape_open = cytoscape_open, graph_layout = graph_layout, rescale_node = rescale_node, rescale_label = rescale_label)
   #Reset plot layout
   par(mfrow=c(1,1))
 }
 
 
-plot_cytoscape.NetGSA <- function(edges_pathways, edges_all, pathway_gene_map, pathway_results, gene_results, graph_layout = NULL, title = "Pathway Network"){
+plot_cytoscape.NetGSA <- function(edges_pathways, edges_all, pathway_gene_map, pathway_results, gene_results, fdrCutoffCols, graph_layout = NULL, title = "Pathway Network"){
   title <-  gsub(" ", "\\ ", title, fixed = TRUE)
   #Using Cytoscape
   network_ids         <- createNestedNetwork(edges_pathways = edges_pathways, edges_all = edges_all, pathway_vertices = pathway_gene_map, main = title)
@@ -45,7 +48,7 @@ plot_cytoscape.NetGSA <- function(edges_pathways, edges_all, pathway_gene_map, p
   
   #Setting up "pathway_style"
   RCy3::setNodeColorMapping("teststat", c(-teststat_lim, 0, teststat_lim), c("#FFA500", "#FFFFFF", "#0000FF"), mapping.type = "continuous", style.name = "pathway_style")
-  RCy3::setNodeBorderColorMapping("pFdr", c(0,1), c("#FF0000", "#FFFFFF"), mapping.type = "continuous", style.name = "pathway_style")
+  RCy3::setNodeBorderColorMapping("pFdr", unname(do.call(c, lapply(fdrCutoffCols, "[[", "cutoffs"))), unname(do.call(c, lapply(fdrCutoffCols, "[[", "cols"))), mapping.type = "continuous", style.name = "pathway_style")
   RCy3::setNodeWidthMapping("pSize", c(min(pathway_results$pSize), max(pathway_results$pSize)), c(20, 120), style.name = "pathway_style")
   RCy3::setNodeHeightMapping("pSize", c(min(pathway_results$pSize), max(pathway_results$pSize)), c(20, 120), style.name = "pathway_style")
   RCy3::setNodeTooltipMapping("pathway", style.name = "pathway_style")
@@ -59,7 +62,7 @@ plot_cytoscape.NetGSA <- function(edges_pathways, edges_all, pathway_gene_map, p
 }
 
 
-plot_igraph.NetGSA <- function(edges_pathways, pathway_results, pathway_gene_map, nodes_layout = NULL, cytoscape_open = FALSE, graph_layout = NULL, rescale_node = c(2,10), rescale_label = c(0.5,0.6)){
+plot_igraph.NetGSA <- function(edges_pathways, pathway_results, pathway_gene_map, fdrCutoffCols, nodes_layout = NULL, cytoscape_open = FALSE, graph_layout = NULL, rescale_node = c(2,10), rescale_label = c(0.5,0.6)){
   if(is.null(nodes_layout)) nodes_list <- pathway_results[,"pathway", drop = FALSE]
   else                      nodes_list <- nodes_layout
   #Using igraph if Cytoscape not available
@@ -67,9 +70,15 @@ plot_igraph.NetGSA <- function(edges_pathways, pathway_results, pathway_gene_map
   pathway_results_ordered <- pathway_results[match(igraph::V(ig)$name, pathway_results$pathway), ] #Make sure this is in correct order
   
   ## Color vertex outline based on FDR
-  fdr_cols                <- c("red", "white") #Red is small vals (sig) white is large vals (insig)
-  fdr_ramp                <- colorRamp(fdr_cols) #Coloring p1
-  fdr_rgb_vals            <- rgb(fdr_ramp(pathway_results_ordered$pFdr)/255) #Coloring p2
+  #Define color ranges of interest
+  fdr_ramps               <- list("0_0.05" = colorRamp(fdrCutoffCols[["0_005"]][["cols"]]), "0.05_0.1" = colorRamp(fdrCutoffCols[["005_01"]][["cols"]]), "0.1_0.2" = colorRamp(fdrCutoffCols[["01_02"]][["cols"]]), "0.2_1" = colorRamp(fdrCutoffCols[["02_1"]][["cols"]])) #Coloring p1
+  fdr_ramps_vals          <- vapply(pathway_results_ordered$pFdr, function(x){
+    if( x < 0.05) return(fdr_ramps[["0_0.05"]](x))
+    else if (x < 0.1) return(fdr_ramps[["0.05_0.1"]](x))
+    else if (x < 0.2) return(fdr_ramps[["0.1_0.2"]](x))
+    else return(fdr_ramps[["0.2_1"]](x))
+  }, FUN.VALUE = numeric(3))
+  fdr_rgb_vals            <- rgb(t(fdr_ramps_vals)/255) #Coloring p2
   
   ## Color vertex based on teststat
   teststat_lim            <- max(abs(min(pathway_results_ordered$teststat)), abs(max(pathway_results_ordered$teststat)))
@@ -101,9 +110,9 @@ plot_igraph.NetGSA <- function(edges_pathways, pathway_results, pathway_gene_map
     rasterImage(teststat_image, 0, 0, 0.15,1)
     mtext("Node Color\nTest statistic", side = 3, at = c(0.075))
     
-    fdr_image <- as.raster(matrix(rev(colorRampPalette(fdr_cols)(20)), ncol=1))
+    fdr_image <- as.raster(matrix(rev(c(colorRampPalette(fdrCutoffCols[["0_005"]][["cols"]])(20), colorRampPalette(fdrCutoffCols[["005_01"]][["cols"]])(20), colorRampPalette(fdrCutoffCols[["01_02"]][["cols"]])(40), colorRampPalette(fdrCutoffCols[["02_1"]][["cols"]])(320))), ncol=1))
     plot(c(0,0.5),c(0,1),type = 'n', axes = F,xlab = '', ylab = '')
-    text(x=0.225, y = c(0,1), labels = c(0,1))
+    text(x=0.225, y = c(0,0.05, 0.1, 0.2, 1), labels = c(0,0.05, 0.1, 0.2, 1))
     rasterImage(fdr_image, 0, 0, 0.15,1)
     mtext("Node Border\nFDR adjusted p-value", side = 3, at = c(0.075))
     
@@ -113,7 +122,7 @@ plot_igraph.NetGSA <- function(edges_pathways, pathway_results, pathway_gene_map
   }
 }
 
-plotCytoLegend <- function(pathway_results, title = "Cytoscape plot legend", igraph = FALSE){
+plotCytoLegend <- function(pathway_results, fdrCutoffCols, title = "Cytoscape plot legend", igraph = FALSE){
   fdr_cols                <- c("red", "white") #Red is small vals (sig) white is large vals (insig)
   teststat_cols           <- c("orange", "white", "blue") #Orange is small vals (-), blue is large vals (+)
   teststat_lim            <- max(abs(min(pathway_results$teststat)), abs(max(pathway_results$teststat)))
@@ -140,11 +149,11 @@ plotCytoLegend <- function(pathway_results, title = "Cytoscape plot legend", igr
   mtext("Node Color\nTest statistic", side = 3, at = c(0.5))
   
   if (!igraph){
-    fdr_image <- as.raster(matrix(colorRampPalette(fdr_cols)(20), nrow =1))
+    fdr_image <- as.raster(matrix(c(colorRampPalette(fdrCutoffCols[["0_005"]][["cols"]])(20), colorRampPalette(fdrCutoffCols[["005_01"]][["cols"]])(20), colorRampPalette(fdrCutoffCols[["01_02"]][["cols"]])(40), colorRampPalette(fdrCutoffCols[["02_1"]][["cols"]])(320)), nrow=1))
     plot(c(0,1),c(0,0.5),type = 'n', axes = F,xlab = '', ylab = '')
-    text(y=0.175, x = c(0,1), labels = round(c(0,1), digits = 2))
+    text(y=0.175, x = c(0,0.05, 0.1, 0.2, 1), labels = c(0,0.05, 0.1, 0.2, 1))
     rasterImage(fdr_image, 0, 0.25, 1,0.5)
-    mtext("Node Border\nFDR adjusted p-value (q-value)", side = 3, at = c(0.5)) 
+    mtext("Node Border\nFDR adjusted p-value", side = 3, at = c(0.5))
   }
 }
 
