@@ -11,7 +11,6 @@ NetGSAq <-
     sampling = TRUE,
     sample_n = NULL,
     sample_p = NULL, 
-    sample_seeds = NULL,
     minsize=5,
     eta=0.1,           
     lim4kappa=500

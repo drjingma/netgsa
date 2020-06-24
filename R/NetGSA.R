@@ -4,17 +4,16 @@ NetGSA <-
     x, 	
     group,    
     pathways, 	
-    lklMethod=c("REML","ML", "HE", "REHE"),
+    lklMethod="REHE ",
     sampling = FALSE,
     sample_n = NULL,
     sample_p = NULL, 
-    sample_seeds = NULL, #Sample seeds, first entry for n second for p
     minsize=5,
     eta=0.1,           
     lim4kappa=500
   ){
     this.call <- match.call()
-    lklMethod <- match.arg(lklMethod)
+    lklMethod <- match.arg(lklMethod, c("REML","ML", "HE", "REHE"))
     
     edgelist <- A[["edgelist"]]
     A[["edgelist"]] <- NULL
@@ -80,7 +79,8 @@ NetGSA <-
                        sample_seeds = sample_seeds,
                        lb = 0.5,           
                        ub = 100,           
-                       tol = 0.01)         
+                       tol = 0.01,
+                       maxIter = 100)         
     
     ##-----------------
     ##Determine whether the network is DAG
