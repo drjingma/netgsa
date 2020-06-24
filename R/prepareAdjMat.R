@@ -44,7 +44,9 @@ prepareAdjMat <-
     
     net_info        <- convertEdgeListToZeroOne(edgeL_freq_usr, user_info[["user_non_edges"]], genes, edgeL_info[["genes_not_in_dbs"]])
     
-    if(net_info[["directed"]]) {reorder <- rownames(net_info[["ones"]]); X <- X[reorder, ]}
+    if(net_info[["directed"]]) {reorder <- rownames(X);
+                                net_info[c("ones","ones_freq", "zeros")] <- lapply(net_info[c("ones","ones_freq", "zeros")], function(x) x[reorder, reorder])
+    }
  
     n <- table(group)
     p <- nrow(X)
@@ -427,7 +429,7 @@ estimateNetwork <- function(grp, X, group, net_info, n, p, lambda_c, eta, net_cl
   if(is.null(net_clusters)){
     if(net_info$directed){
       net_estd = netEst.dir(X[, group == grp], zero = net_info$zeros, one = net_info$ones)
-      res = data.table(group = grp, lambda = NA, Adj = list(net_estd$Adj), invcov = list(net_estd$infmat), lambda_l = list(net_estd$lambda))
+      res = data.table(group = grp, lambda = NA, Adj = list(list(net_estd$Adj)), invcov = list(list(net_estd$infmat)), lambda_l = list(list(net_estd$lambda)))
       return(res)
     }else{
       n2 = n[grp]
