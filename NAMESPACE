@@ -1,7 +1,5 @@
 export(NetGSA,
-       prepareAdjacencyMatrix,
        prepareAdjMat,
-       preparePathways,
        netEst.dir,
        netEst.undir,
        bic.netEst.undir,

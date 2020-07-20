@@ -155,7 +155,6 @@ netEst.undir <-
         return(temp)
         })
     }
-    #return(Adj)
 
     empcov = cov(X)
     if (kappa(empcov) > 1e+3){
@@ -186,43 +185,3 @@ netEst.undir <-
 
     return(list(Adj=partialCor,invcov=siginv,lambda=lambda))
   }
-# 
-# calcPartialCor <- function(A, rhoMat, empcov, rnms){
-#   #Connected components
-#   comps <- igraph::components(igraph::graph_from_adjacency_matrix(A))$membership
-# 
-#   pCorList <- lapply(unique(comps), function(comp){
-#     idxs = whic h(comps == comp)
-# 
-#     if(length(idxs) == 1){
-#       partialCor = matrix(0, nrow = 1, ncol = 1, dimnames = list(rnms[idxs], rnms[idxs]))
-#       siginv = matrix(1/empcov[idxs,idxs], nrow = 1, ncol = 1, dimnames = list(rnms[idxs], rnms[idxs]))
-#       return(list(partialCor = partialCor, siginv = siginv))
-#     }
-#     print("Performing glasso...")
-#     obj    <- glassoFast(empcov[idxs,idxs], rhoMat[idxs,idxs], thr = 1e-10)
-#     print("Done performing glasso...")
-#     siginv <- chol2inv(cholCpp(obj$w))
-#     Ip     <- diag(dim(siginv)[1])
-#     partialCor <- Ip - cov2cor(siginv)
-#     partialCor[abs(partialCor) < 1e-08] <- 0
-#     rownames(partialCor) <- colnames(partialCor) <- rnms[idxs]
-#     rownames(siginv)     <- colnames(siginv)     <- rnms[idxs]
-#     return(list(partialCor = partialCor, siginv = siginv))
-#   })
-#   partialCor2 <- as.matrix(bdiag(lapply(pCorList, "[[", "partialCor")))
-# 
-#   #Reordering
-#   rownames(partialCor2) <- colnames(partialCor2) <- Reduce(c, lapply(pCorList, function(x) rownames(x[["partialCor"]])))
-#   partialCor3           <- partialCor2[rnms, rnms]
-# 
-# 
-#   siginv2 <- as.matrix(bdiag(lapply(pCorList, "[[", "siginv")))
-# 
-#   #Reordering
-#   rownames(siginv2) <- colnames(siginv2) <- Reduce(c, lapply(pCorList, function(x) rownames(x[["siginv"]])))
-#   siginv3          <- siginv2[rnms, rnms]
-# 
-#   return(list(partialCor = partialCor3, siginv = siginv3))
-# 
-# }

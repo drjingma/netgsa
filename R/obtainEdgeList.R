@@ -33,7 +33,6 @@ obtainEdgeList <- function(genes, databases){
                                                                                               base_gene_src = base_gene_dest, base_id_src = base_id_dest, base_gene_dest = base_gene_src, base_id_dest = base_id_src,
                                                                                               database = database)]), use.names = TRUE, fill = TRUE)
   # Take unique
-  # UNIT TEST IDEA: make sure when grouping by ID & database that there are no obs with > 1 occurrence. E.g. an edge shouldnt be in a database > 1 time.
   full_edgelist_subs_dir_uniq  <- unique(full_edgelist_subs_dir[, c("database", "base_gene_src", "base_id_src", "base_gene_dest", "base_id_dest"), with = FALSE])
   
   ## Lastly, we need to know which genes never appear in the full stack edgelist. If they dont appear then we likely dont have enough info

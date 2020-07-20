@@ -18,6 +18,6 @@ NetGSAq <-
     dbs <- unique(as.character(graphite::pathwayDatabases()$database))
     adj_mats <- prepareAdjMat(x, group, databases = dbs, cluster = cluster, file_e = file_e, file_ne = file_ne, lambda_c = lambda_c, eta = eta)
     net_est  <- NetGSA(adj_mats$Adj, x, group, pathways, lklMethod = lklMethod, sampling = sampling, sample_n = sample_n,
-                       sample_p = sample_p, sample_seeds = sample_seeds, minsize = minsize, eta = eta, lim4kappa = lim4kappa)
+                       sample_p = sample_p, minsize = minsize, eta = eta, lim4kappa = lim4kappa)
     return(net_est)
 }

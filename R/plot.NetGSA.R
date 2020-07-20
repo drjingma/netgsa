@@ -28,7 +28,6 @@ plot_cytoscape.NetGSA <- function(edges_pathways, edges_all, pathway_gene_map, p
   #Using Cytoscape
   network_ids         <- createNestedNetwork(edges_pathways = edges_pathways, edges_all = edges_all, pathway_vertices = pathway_gene_map, main = title)
   
-  #Now we add data to the nodes. Could do this all through cyrest, but thankfully RCy3 has a helper fn for us
   #Also adding edge weights incase we want that
   RCy3::setCurrentNetwork(network_ids$networks[1])
   edge_df             <- setnames(copy(edges_pathways)[, id := paste0(src_pathway, " (pp) ", dest_pathway)], "weight_sum", "weight")
@@ -138,7 +137,6 @@ plotCytoLegend <- function(pathway_results, fdrCutoffCols, title = "Cytoscape pl
   }
   
   
-  #plot(c(0,1),c(0,0.5), type = "n", axes = F, xlab = "", ylab = "");text(x = 0.5, y = 0, "Cytoscape color legend")
   plot.new()
   text(0.5,0.5,title,cex=2,font=2)
   
@@ -170,25 +168,32 @@ getCytoscapeXYCoords <- function(network){
 
 formatPathways <- function(x, pways, graph_layout = NULL){
   gene_results <- x$graph$gene.tests
+  cytoscape_open      <- tryCatch({httr::GET("http://localhost:1234/v1/version")$status_code == 200}, error = function(e){return(FALSE)})
+  if(!cytoscape_open) stop("formatPathways is only compatible with Cytoscape plots")
   #Layout of each pathway - Slow & prone to crashing
   for (pway in pways){
-    RCy3::setCurrentNetwork(pway)
-    net <- RCy3::getNetworkSuid()
-    curr_nodes <- unlist(RCy3::getAllNodes())
-    #Set and edit our new visual style
-    RCy3::loadTableData(data = gene_results[J(curr_nodes), ], data.key.column = "gene", table = "node", table.key.column = "name", network = net)
-    #Setting up "gene_style"
-    RCy3::setNodeColorMapping("pFdr", c(0,1), c("#FF0000", "#FFFFFF"), mapping.type = "continuous", style.name = "gene_style")
-    RCy3::setNodeTooltipMapping("gene", style.name = "gene_style")
-    RCy3::setNodeShapeDefault("ellipse", style.name = "gene_style") #I was getting weird error because some of the nodes werent added!
-    #setNodeBorderWidthDefault(10, style.name = "gene_style")
-    RCy3::setNodeWidthDefault(75, style.name = "gene_style")
-    RCy3::setNodeHeightDefault(75, style.name = "gene_style")
-    RCy3::setVisualStyle("gene_style", network = net)
-    if(is.null(graph_layout)){
-      layout_str = 'force-directed defaultSpringCoefficient=0.00000004 defaultSpringLength=100'
-    }
-    RCy3::layoutNetwork(layout_str)
+      if (! pway %in% RCy3::getNetworkList()) {
+        stop(paste0("Network does not exist: ", pway))
+      }
+      #RCy3 has an error in code so doing manually
+      cmd <- paste0("network get attribute network=\"", pway, "\" namespace=\"default\" columnList=\"SUID\"")
+      net <- RCy3::commandsPOST(cmd)[[1]]
+      RCy3::setCurrentNetwork(net)
+      curr_nodes <- unlist(RCy3::getAllNodes())
+      #Set and edit our new visual style
+      RCy3::loadTableData(data = gene_results[J(curr_nodes), ], data.key.column = "gene", table = "node", table.key.column = "name", network = net)
+      #Setting up "gene_style"
+      RCy3::setNodeColorMapping("pFdr", c(0,1), c("#FF0000", "#FFFFFF"), mapping.type = "continuous", style.name = "gene_style")
+      RCy3::setNodeTooltipMapping("gene", style.name = "gene_style")
+      RCy3::setNodeShapeDefault("ellipse", style.name = "gene_style") #I was getting weird error because some of the nodes werent added!
+      #setNodeBorderWidthDefault(10, style.name = "gene_style")
+      RCy3::setNodeWidthDefault(75, style.name = "gene_style")
+      RCy3::setNodeHeightDefault(75, style.name = "gene_style")
+      RCy3::setVisualStyle("gene_style", network = net)
+      if(is.null(graph_layout)){
+        layout_str = 'force-directed defaultSpringCoefficient=0.00000004 defaultSpringLength=100'
+      }
+      RCy3::layoutNetwork(layout_str)
   }
 }
 

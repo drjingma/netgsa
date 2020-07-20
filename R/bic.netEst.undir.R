@@ -39,7 +39,7 @@ function(x, zero = NULL, one = NULL, lambda, rho = NULL,weight = NULL, eta = 0, 
   
   for (loop.lambda in 1:length(lambda)) {
     for (loop.w in 1:length(weight)){
-      siginv = netEst.undir(x, zero, one, lambda[loop.lambda], rho=rho, weight=weight[loop.w], eta=eta)$invcov
+      siginv = netEst.undir(x, zero, one, lambda[loop.lambda], rho=rho, weight=weight[loop.w], eta=eta)$invcov[[1]]
       no.edge = sum(abs(siginv) > eps) - p
       bic.score[loop.lambda, loop.w] = matTr2(empcov %*Cpp% siginv) - determinant(siginv, logarithm = T)$modulus + log(n) * no.edge/(2 * n)
       df[loop.lambda, loop.w] = no.edge

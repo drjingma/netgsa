@@ -4,7 +4,7 @@ NetGSA <-
     x, 	
     group,    
     pathways, 	
-    lklMethod="REHE ",
+    lklMethod="REHE",
     sampling = FALSE,
     sample_n = NULL,
     sample_p = NULL, 
@@ -65,10 +65,6 @@ NetGSA <-
     if (n<10){
       warning("The sample size is too small! Use NetGSA at your discretion!")
     }
-
-    if (!is.null(sample_seeds) & ! (is.numeric(sample_seeds) & length(sample_seeds) == 2)){
-      stop("Sample seeds must be NULL or numeric vector of length 2")
-    }
     ##-----------------
     ##setting up control parameters for the var estimation procedures
     varEstCntrl = list(lklMethod = lklMethod,                    
@@ -76,7 +72,6 @@ NetGSA <-
                        sampling = sampling,
                        ratio = sample_n,
                        p_sample = sample_p,
-                       sample_seeds = sample_seeds,
                        lb = 0.5,           
                        ub = 100,           
                        tol = 0.01,
