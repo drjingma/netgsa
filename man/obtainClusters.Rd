@@ -10,7 +10,7 @@ Tries six different clustering methods and chooses the one with the best results
 
 
 \usage{
-obtainClusters(A)
+obtainClusters(A, order, cluster)
 }
 
 
@@ -19,7 +19,9 @@ obtainClusters(A)
 }
 
 \details{
-This function tries the six different clustering methods in igraph and chooses the best one. As stated in \code{prepareAdjMat} the six methods evaluated are: \code{cluster_walktrap}, \code{cluster_leading_eigen}, \code{cluster_fast_greedy}, \code{cluster_label_prop}, \code{cluster_infomap}, and \code{cluster_louvain}. See \code{prepareAdjMat} for how the best is chosen.
+This function tries the six different clustering methods in igraph and chooses the best one. As stated in \code{prepareAdjMat} the six methods evaluated are: \code{cluster_walktrap}, \code{cluster_leading_eigen}, \code{cluster_fast_greedy}, \code{cluster_label_prop}, \code{cluster_infomap}, and \code{cluster_louvain}. See \code{prepareAdjMat} for how the best is chosen. Even if \code{cluster = FALSE}, connected components of the 0-1 adjacency matrix are used as clusters.
+
+It is essential that the order of the returned named numeric vector must be in the same order as the rows of the data matrix.
 }
 
 
@@ -32,7 +34,7 @@ Ma, J., Shojaie, A. & Michailidis, G. (2016) Network-based pathway enrichment an
 }
 
 \author{
-Mike Hellstern
+Michael Hellstern
 }
 
 \seealso{

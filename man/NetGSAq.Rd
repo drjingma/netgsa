@@ -4,8 +4,8 @@
 \description{Quick version of \code{NetGSA}}
 \usage{
 NetGSAq(x, group, pathways, lambda_c = 1, file_e = NULL, file_ne = NULL,
-    lklMethod="REHE", cluster = TRUE, sampling = FALSE, sample_n = NULL,
-    sample_p = NULL, sample_seeds = NULL, minsize=5, eta=0.1, lim4kappa=500)
+    lklMethod="REHE", cluster = TRUE, sampling = TRUE, sample_n = NULL,
+    sample_p = NULL, minsize=5, eta=0.1, lim4kappa=500)
 }
 \arguments{
   \item{x}{See \code{x} argument in \code{NetGSA}}
@@ -15,6 +15,7 @@ NetGSAq(x, group, pathways, lambda_c = 1, file_e = NULL, file_ne = NULL,
   \item{file_e}{See \code{file_e} argument in \code{prepareAdjMat}}
   \item{file_ne}{See \code{file_ne} argument in \code{prepareAdjMat}}
   \item{lklMethod}{See \code{lklMethod} argument in \code{NetGSA}}
+  \item{cluster}{See \code{cluster} argument in \code{prepareAdjMat}}
   \item{sampling}{See \code{sampling} argument in \code{NetGSA}}
   \item{sample_n}{See \code{sample_n} argument in \code{NetGSA}}
   \item{sample_p}{See \code{sample_p} argument in \code{NetGSA}}
@@ -28,7 +29,7 @@ This is a wrapper function to perform weighted adjacency matrix estimation and p
 \value{
 A list with components
 \item{results}{A data frame with pathway names, pathway sizes, p-values and false discovery rate corrected q-values, and test statistic for all pathways.}
-\item{beta}{Vector of fixed effects of length \eqn{2p}, of which the first half is for condition 1 and the second half for condition 2.}
+\item{beta}{Vector of fixed effects of length \eqn{kp}, the first k elements corresponds to condition 1, the second k to condition 2, etc.}
 \item{s2.epsilon}{Variance of the random errors \eqn{\epsilon}.}
 \item{s2.gamma}{Variance of the random effects \eqn{\gamma}.}
 \item{graph}{List of components needed in \code{plot.NetGSA}.}
@@ -46,4 +47,15 @@ Michael Hellstern
 }
 \seealso{
 \code{\link{prepareAdjMat}}, \code{\link{netEst.dir}}, \code{\link{netEst.undir}}
+}
+
+\examples{
+## load the data
+data("breastcancer2012")
+
+## consider genes from the "ErbB signaling pathway" and "Jak-STAT signaling pathway"
+genenames    <- unique(c(pathways[[24]], pathways[[52]]))
+sx           <- x[match(rownames(x), genenames, nomatch = 0L) > 0L,]
+
+out_clusterq <- NetGSAq(sx, group, pathways_mat[c(24, 52), rownames(sx)])
 }

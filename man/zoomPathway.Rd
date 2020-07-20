@@ -28,9 +28,18 @@ Ma, J., Shojaie, A. & Michailidis, G. (2016) Network-based pathway enrichment an
 }
 
 \author{
-Mike Hellstern
+Michael Hellstern
 }
 
 \seealso{
 \code{\link{plot.NetGSA}}
+}
+
+\examples{
+library(igraph)
+
+#Cytoscape closed or open
+plot(out_cluster)
+my_layout <- function(graph) layout_with_graphopt(graph = graph, spring.length = 1000, spring.constant = 0.00004)
+zoomPathway(out_cluster, "ErbB signaling pathway", my_layout)
 }

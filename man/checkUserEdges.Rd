@@ -29,7 +29,7 @@ Ma, J., Shojaie, A. & Michailidis, G. (2016) Network-based pathway enrichment an
 }
 
 \author{
-Mike Hellstern
+Michael Hellstern
 }
 
 \seealso{

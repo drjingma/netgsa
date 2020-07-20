@@ -5,8 +5,7 @@
 \title{Combine edges from databases into a data.table}
 
 \description{
-Retrieves edges from specified databases and stacks them into one data.table
-}
+Retrieves edges from specified databases and stacks them into one data.table.This is a helper function in \code{prepareAdjacencyMatrixDB} and should not be called by the user.}
 
 
 \usage{
@@ -38,7 +37,7 @@ Ma, J., Shojaie, A. & Michailidis, G. (2016) Network-based pathway enrichment an
 }
 
 \author{
-Mike Hellstern
+Michael Hellstern
 }
 
 \seealso{

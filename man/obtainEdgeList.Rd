@@ -24,13 +24,13 @@ A list of class \code{obtainedEdgeList} with components
 \item{genes_not_in_dbs}{A vector of genes specified, but were not found in the databases searched}
 }
 \author{
-Mike Hellstern
+Michael Hellstern
 }
 \seealso{
 \code{\link{prepareAdjMat}}, \code{\link{netEst.dir}}, \code{\link{netEst.undir}}
 }
 \examples{
-genes <- setNames(c("10000", "10298", "106821730", "10718", "1398", "1399", "145957", "1839", "1950", "1956"), rep("ENTREZID", 10))
+genes <- paste0("ENTREZID:", c("10000", "10298", "106821730", "10718", "1398", "1399", "145957", "1839", "1950", "1956"))
 
 out <- obtainEdgeList(genes, c("kegg", "reactome"))
 }

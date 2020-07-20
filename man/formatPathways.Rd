@@ -6,12 +6,13 @@
 Format cytoscape nested networks using preset NetGSA format}
 
 \usage{
-formatPathways(x, pways)
+formatPathways(x, pways, graph_layout = NULL)
 }
 
 \arguments{
   \item{x}{A NetGSA object returned from calling \code{NetGSA()}}
   \item{pways}{Character vector of pathways to format}
+  \item{graph_layout}{(Optional) Layout to pass to plots. Must be a string for Cytoscape which will be passed to \code{RCy3::layoutNetwork}.}
 }
   
 \details{
@@ -29,9 +30,16 @@ Ma, J., Shojaie, A. & Michailidis, G. (2016) Network-based pathway enrichment an
 }
 
 \author{
-Mike Hellstern
+Michael Hellstern
 }
 
 \seealso{
 \code{\link{plot.NetGSA}}
+}
+
+\examples{
+
+#Cytoscape open
+plot(out_cluster)
+formatPathways(out_cluster, "ErbB signaling pathway")
 }
