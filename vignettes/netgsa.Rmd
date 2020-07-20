@@ -29,6 +29,7 @@ Our example data set comes from a breast cancer study [@cancer2012comprehensive]
 
 NetGSA works directly with the expression data matrix. When loading the data, it is important to check the distribution of raw sequencing reads and perform log transformation if necessary. Data in this example were already log transformed. Rows of the data matrix correspond to genes and columns to subjects. Genes in this data matrix were labeled with Entrez IDs, same as those used in KEGG pathways. 
 
+
 ```{r data, warning = FALSE, message = FALSE}
 library(netgsa)
 library(graphite)
@@ -37,7 +38,12 @@ data("breastcancer2012")
 ls()
 ```
 
-The objects loaded are:
+<!-- Remove once package updated -->
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+devtools::load_all("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa")
+```
+
+The objects loaded which are necessary for this vignette are:
 
 * `x`, the data matrix
 * `edgelist`, a data.frame containing user-specified edges
@@ -93,7 +99,7 @@ sample_edges
 
 ### Pathway matrix
 
-Lastly, as documented in `?NetGSA` we need an indicator matrix of pathways. The rows of this matirx should correspond to pathways and the columns to the genes included in the analysis. The dimension is then *npath* x *p*. Values in this matrix should be 1 for genes that are in a given pathway and 0 otherwise. 
+Lastly, as documented in `?NetGSA` we need an indicator matrix of pathways. The rows of this matrix should correspond to pathways and the columns to the genes included in the analysis. The dimension is then *npath* x *p*. Values in this matrix should be 1 for genes that are in a given pathway and 0 otherwise. 
 
 We consider pathways from KEGG [@kanehisa2000kegg]. KEGG pathways can be accessed in R using the **graphite** package. 
 ```{r pathways}
@@ -169,7 +175,7 @@ network_info <- prepareAdjMat(x, group, database_search,
                                          file_ne = "nonedgelist.txt")
 ```
 
-The main value of interest is `network_info[["Adj"]]`, a list of lists. The top level list indicates the condition while the next level is a list of adjacency matrices (one for each cluster). If `cluster = FALSE` there is only one cluster and thus one adjacency matrix for each condition. Also note that in this example, the object `database_search` was created. If desired, this can be saved and used later to ensure the same network information was used. However, the results may not be exactly the same. For example, some of the clustering algorithms are not deterministic so while the network information may be the same the clusters may be different resulting in different adjacency matrices. The adjacency matrix for the first condition and first cluster can be accessed with:
+The main value of interest is `network_info[["Adj"]]`, a list of lists. The top level list indicates the condition while the next level is a list of adjacency matrices (one for each cluster). If `cluster = FALSE` there is an element for each connected component in the network. Also note that in this example, the object `database_search` was created. If desired, this can be saved and used later to ensure the same network information was used. However, the results may not be exactly the same. For example, some of the clustering algorithms are not deterministic so while the network information may be the same the clusters may be different resulting in different adjacency matrices. The adjacency matrix for the first condition and first cluster can be accessed with:
 
 ```{r}
 network_info[["Adj"]][[1]][[1]][7:9,7:9]
@@ -185,13 +191,7 @@ Note we cannot control cluster size which is why we try several methods and impl
 
 ### NetGSA
 
-Now that the adjacency matrices are assembled we can perform pathway inference using `NetGSA`:
-
-```{r, eval = FALSE}
-pathway_tests <- NetGSA(network_info[["Adj"]], x, group, pathways_mat)
-```
-
-The returned value from `prepareAdjMat` will always be in the correct format regardless of whether or not clustering is used, so one should always be able to pass `network_info[["Adj"]]` directly to `NetGSA`. The default is to use restriced maximum likelihood (REML) to calculate the variance component. However, this can be quite slow, so another option is to use the restricted Haseman-Elston regression (REHE) instead. This is beneficial since it allows for sampling so you can significantly increase the speed. For example:
+Now that the adjacency matrices are assembled we can perform pathway inference using `NetGSA`. The returned value from `prepareAdjMat` will always be in the correct format regardless of whether or not clustering is used, so one should always be able to pass `network_info[["Adj"]]` directly to `NetGSA`. The default is to use restricted Haseman-Elston regression (REHE) with sampling to estimate the variance parameters. This allows for significant computational speed up and little to no loss in power [[CITE SOFTWARE NOTE]]. One can also use REML for variance parameter estimation but this can be quite slow for problems with moderate or large dimension. For explanatory purposes, we explicity write out the function:
 
 ```{r}
 pathway_tests_rehe <- NetGSA(network_info[["Adj"]], x, group, pathways_mat, 
@@ -201,7 +201,7 @@ pathway_tests_rehe <- NetGSA(network_info[["Adj"]], x, group, pathways_mat,
 
 The `sample_n` and `sample_p` parameters control the ratio for subsampling observations (columns of data matrix `x`) and variables (rows of data matrix `x`) respectively. More information on REHE and sampling can be found in the `?NetGSA` Details section.
 
-Note that inference using REML can take several hours depending on the complexity of the problem, while inference using REHE can take minutes. In this example, with  `sample_n = 0.25`,  `sample_p = 0.25` only took about 2 minutes on the machine used to create this vignette.
+Note that inference using REML can take several hours depending on the complexity of the problem, while inference using REHE can take minutes. Roughly, REML becomes quite slow for p > 2,000. In this example, with  `sample_n = 0.25`,  `sample_p = 0.25` only took about 2 minutes on a 2 CPU personal computer with 16 GB of RAM.
 
 The main inference results are stored in `pathway_tests[["results"]]` and contain the pathway names as well as their significance (p-values and q-values are reported) and test statistics.
 
