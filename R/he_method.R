@@ -92,7 +92,7 @@ he_method = function(n, D, DtD, resid, control=NULL){
           XY_1 = sum(diag(resid_sq))
           XY_2 = sum((resid_sq*DTD_tmp)[mat_index])
           XX12 = sum(diag(DTD_tmp))
-          XX22 = sum(DTD_tmp[mat_index])
+          XX22 = sum((DTD_tmp^2)[mat_index])
           return(c(XY_1, XY_2, XX12, XX22))
         })
       )
