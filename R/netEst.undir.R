@@ -167,7 +167,7 @@ netEst.undir <-
       diag(rhoM) = diag_penalty
       
       #No need to handle singleton clusters. They shouldn't exist here. Are handled in netEstClusts function
-      obj <- glassoFast(empcov, rho = rhoM, thr = 1e-4)
+      obj <- glassoFast(empcov, rho = rhoM, thr = 1e-9) #Threshold must be < threshold for determining an edge
       siginv <- chol2inv(cholCpp(obj$w))
 
       partialCor <- Ip - cov2cor(siginv)

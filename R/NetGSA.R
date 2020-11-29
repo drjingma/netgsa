@@ -38,7 +38,7 @@ NetGSA <-
       order <- rownames(A_mat[[1]])
       A_mat <- lapply(A_mat, function(Ai) Ai[order, order])
       x <- x[order,]
-      pathways <- pathways[,order]
+      pathways <- pathways[,order, drop = FALSE]
     }
     
     

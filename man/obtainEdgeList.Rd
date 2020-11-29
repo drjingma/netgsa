@@ -9,7 +9,7 @@ obtainEdgeList(genes, databases)
 }
 \arguments{
   \item{genes}{Character vector of gene ID and gene value. The ID and gene value should be separated by a colon. E.g. "ENTREZID:127550". It is very important to have these separated by a colon since \code{obtainEdgeList} uses regular expressions to split this into gene value and gene ID.}
-  \item{databases}{Character vector of graphite databases you wish to search for edges. Options are: biocarta, humancyc, kegg, nci, panther, pathbank, pharmgkb, reactome, smpd}
+  \item{databases}{Character vector of graphite databases you wish to search for edges. Options are: biocarta, kegg, nci, panther, pathbank, pharmgkb, reactome, smpd}
 }
 \details{
 \code{obtainEdgeList} searches through the specified databases to find edges between genes in the \code{genes} argument. Since one can search in multiple databases with different identifiers, genes are converted using \code{AnnotationDbi::select} and metabolites are converted using \code{graphite:::metabolites()}. Databases are also used to specify non-edges. 
