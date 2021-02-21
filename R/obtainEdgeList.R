@@ -5,7 +5,9 @@ obtainEdgeList <- function(genes, databases){
   genes_with_id     <- reshapeIDs(genes, metabolites_ids)
   
   # Creating database here so we only need to process once. Also doing after genes_with_id since this takes the longest. Want to fail as early as possible
-  full_edgelist     <- stackDatabases(databases)
+  full_edgelist     <- stackDatabases(setdiff(databases, "ndex"))
+  #NDEx is special, add it if desired
+  if("ndex" %in% databases) {full_edgelist     <- addNDEx(full_edgelist, genes)}
   
   # Obtaining unique ids used by all chosen databases. We will convert to these IDs.
   # E.g. if databases only use "ENTREZID", "CHEBI", and "UNIPROT", this return a list of list(org.Hs.eg.db = c("ENTREZID", "UNIPROT"), metabolites = "CHEBI")
@@ -52,7 +54,7 @@ obtainEdgeList <- function(genes, databases){
     
     not_in_graphite <- ! databases %in% unique(as.character(graphite::pathwayDatabases()[["database"]]))
     if(any(not_in_graphite)) stop(paste0("Database(s): ", paste0(databases[not_in_graphite], collapse = ", "), 
-                                                          " are not found within graphite. Please choose databases from graphite::pathwayDatabases()$databases"))
+                                                          " are not found within graphite. Please choose databases from graphite::pathwayDatabases()$database"))
     
     db_stacked <- rbindlist(lapply(databases, function(db){
                                               rbindlist(lapply(graphite::pathways("hsapiens", db), graphite::edges, which = "mixed", stringsAsFactors = FALSE), use.names = TRUE, idcol = "Pathway")}) 
@@ -185,6 +187,60 @@ obtainEdgeList <- function(genes, databases){
     else                     return(NULL)
     
   }
+  
+#Add NDEx information
+  #Does not do any conversion of genes
+  #Assumes all edges are undirected
+  #Only searches public
+  addNDEx <- function(edgelist, genes){
+    ndexcon = ndexr::ndex_connect()
+    #Find NDEx networks that have any of our genes as nodeNames. Only option appears to be string search in nodeNames 
+    #(e.g. if gene is "38" this will match a nodeName of "3801" in NDEx). Also NDEx is by default an OR search, e.g.
+    #if searchString="nodeName:38 nodeName:401" it will find networks that have partial matches in 38 OR 401
+    #Do this in batches of genes since error if do all at once. Get unique network ids. This will be unique networks
+    #that have a partial match to ANY of our genes of interest
+    search_names <- paste0("nodeName:",genes)
+    found_dbs <- lapply(split(search_names, 1:length(search_names) %/% 200), function(search_vec){
+      return(ndexr::ndex_find_networks(ndexcon, searchString=paste0(search_vec, collapse = " "), size=-1))
+    })
+    all_found_dbs <- rbindlist(found_dbs, use.names = TRUE)
+    unique_ids <- unique(all_found_dbs[,externalId])
+    
+    #Query subnetwork to get only genes of interest. Again this is partial search so will need to cut this down
+    NDEx_edges <- rbindlist(lapply(unique_ids, function(id) NDEx_query_subnetwork(id, ndexcon=ndexcon, search_names=search_names, genes=genes)), 
+                            use.names = TRUE)
+    #Add to full_edgelist
+    edgelist_w_ndex <- rbindlist(list(edgelist, NDEx_edges), use.names=TRUE)
+    
+    return(edgelist_w_ndex)
+  }
+  
+  NDEx_query_subnetwork <- function(ndex_network_id, ndexcon, search_names, genes){
+    query <- jsonlite::toJSON(list(searchString = paste(search_names, collapse = " ")), auto_unbox = TRUE)
+    response <- ndexr:::ndex_rest_POST(ndexcon, route = paste0("/search/network/",ndex_network_id, "/query?save=false"), data = query, raw = FALSE)
+    #Get nodelist/edgelist from query
+    node_dt <- as.data.table(response$nodes[[4]])
+    edge_dt <- as.data.table(response$edges[[3]])
+    
+    if(nrow(node_dt)==0 | nrow(edge_dt) == 0) {return(NULL)}
+    
+    edge_mapped <- edge_dt[node_dt, on=c(s="@id"), src := i.n][node_dt, on=c(t="@id"), dest := i.n]
+    #Keep only edges we're interested in
+    edge_subs <- edge_mapped[((src %in% genes) & (dest %in% genes))]
+    #Remove self-edges
+    edge_subs <- edge_subs[src != dest]
+    
+    
+    if(nrow(edge_subs) == 0){return(NULL)}
+    
+    #Format for stacking with full edgelist
+    edge_format <- edge_subs[,.(database = paste0("ndex_", ndex_network_id), 
+                                src, src_type = names(genes)[match(src, genes)], 
+                                dest, dest_type = names(genes)[match(dest, genes)], 
+                                direction = "undirected")]
+    return(edge_format)
+  }
+
 
 
 

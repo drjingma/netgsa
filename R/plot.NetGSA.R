@@ -57,6 +57,12 @@ plot_cytoscape.NetGSA <- function(edges_pathways, edges_all, pathway_gene_map, p
   RCy3::setNodeShapeBypass(pathway_results$pathway, "ellipse", network = network_ids$networks[1]) #I was getting weird error because some of the nodes werent added!
   RCy3::setVisualStyle("pathway_style")
   
+  #Significant Pathways
+  sigNodes <- pathway_results$pathway[pathway_results$pFdr <= 0.05]
+  if(length(sigNodes) != 0){
+    sigNet <- RCy3::createSubnetwork(nodes=sigNodes, nodes.by.col = "pathway", network = network_ids$networks[1], subnetwork.name="Significant Pathways")
+  }
+  
   return(list(node_locations = node_locations))
 }
 

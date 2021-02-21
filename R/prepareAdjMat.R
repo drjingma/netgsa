@@ -369,7 +369,6 @@ netEstClusts <- function(grp, X, group, net_info, n, lambda_c, eta, net_clusters
                                 }else{
                                   n = n[grp]; p = sum(idxs)
                                   lambda_try = lambda_c*sqrt(log(p)/n)
-                                  #tuning_params <- getUndirTuningParams(X_new, zero = zero_new, one = one_new, lambda_c = lambda_c, n = n[grp], p = sum(idxs), eta = eta)
                                   return(netEst.undir(X_new, zero = zero_new, one = one_new, lambda=lambda_try, rho=(0.1 * sqrt(log(p)/n)), penalize_diag = penalize_diag, eta=eta))
                                 }
                               })
