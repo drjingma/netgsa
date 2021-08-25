@@ -1,4 +1,4 @@
-plot.NetGSA <- function(x, graph_layout = NULL, rescale_node = c(2,10), rescale_label = c(0.5,0.6)){
+plot.NetGSA <- function(x, graph_layout = NULL, rescale_node = c(2,10), rescale_label = c(0.5,0.6), ...){
   edges_pathways_list <- makePathwayEdges(x$graph$edgelist, x$graph$pathways)
   edges_pathways      <- edges_pathways_list[["edges_pathways"]]
   edges_all           <- edges_pathways_list[["edges_all"]]
@@ -24,6 +24,7 @@ plot.NetGSA <- function(x, graph_layout = NULL, rescale_node = c(2,10), rescale_
 
 
 plot_cytoscape.NetGSA <- function(edges_pathways, edges_all, pathway_gene_map, pathway_results, gene_results, fdrCutoffCols, graph_layout = NULL, title = "Pathway Network"){
+  id <- src_pathway <- dest_pathway <- NULL #Added to avoid data.table note in R CMD check
   title <-  gsub(" ", "\\ ", title, fixed = TRUE)
   #Using Cytoscape
   network_ids         <- createNestedNetwork(edges_pathways = edges_pathways, edges_all = edges_all, pathway_vertices = pathway_gene_map, main = title)
@@ -173,6 +174,7 @@ getCytoscapeXYCoords <- function(network){
 
 
 formatPathways <- function(x, pways, graph_layout = NULL){
+  J <- NULL
   gene_results <- x$graph$gene.tests
   cytoscape_open      <- tryCatch({httr::GET("http://localhost:1234/v1/version")$status_code == 200}, error = function(e){return(FALSE)})
   if(!cytoscape_open) stop("formatPathways is only compatible with Cytoscape plots")
@@ -206,6 +208,7 @@ formatPathways <- function(x, pways, graph_layout = NULL){
 
 
 zoomPathway <- function(x, pway, graph_layout = NULL){
+  src_pathway <- dest_pathway <- . <- base_gene_src <- base_gene_dest <- pathway <- NULL #Added to avoid data.table note in R CMD check
   if (!pway %in% x$graph$pathways$pathway) stop(paste0("Pathway: \"", pway, "\" not found in list of pathways"))
   edges_pathways_list <- makePathwayEdges(x$graph$edgelist, x$graph$pathways)
   edges_all           <- edges_pathways_list[["edges_all"]]
@@ -223,12 +226,14 @@ zoomPathway <- function(x, pway, graph_layout = NULL){
 #Return just the edges between pathways & the edges with pathways merged on (for the nested network)
 #Delete self edges
 makePathwayEdges <- function(gene_edges, pathway_gene_map){
+  . <- frequency <- base_gene_src <- base_gene_dest <- i.pathway <- gene <- src_pathway <- dest_pathway <- NULL #Added to avoid data.table note in R CMD check
   res <- gene_edges[pathway_gene_map, .(frequency, base_gene_src, base_gene_dest, src_pathway = i.pathway), on = .(base_gene_src = gene), allow.cartesian = TRUE, nomatch = 0L][
     pathway_gene_map, .(frequency, base_gene_src, base_gene_dest, src_pathway, dest_pathway = i.pathway), on = .(base_gene_dest = gene), allow.cartesian = TRUE, nomatch = 0L]
   return(list(edges_all = res, edges_pathways = res[src_pathway != dest_pathway, .(weight_sum = sum(frequency)), by = .(src_pathway, dest_pathway)]))
 }
 
 createNestedNetwork <- function(edges_pathways, edges_all, pathway_vertices, main){
+  src_pathway <- dest_pathway <- NULL #Added to avoid data.table note in R CMD check
   
   #Copy so doesn't update outside of function
   edges_pathways   <- copy(edges_pathways)[, c("src_pathway", "dest_pathway") := lapply(.SD, function(x) gsub(" ", "\\ ", trimws(x), fixed = TRUE)), .SDcols = c("src_pathway", "dest_pathway")]

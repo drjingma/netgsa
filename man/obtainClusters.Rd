@@ -16,6 +16,8 @@ obtainClusters(A, order, cluster)
 
 \arguments{
   \item{A}{A 0-1 adjacency matrix}
+  \item{order}{Final ordering of genes/metabs to be consistent with order you passed data in}
+  \item{cluster}{Whether or not to cluster (TRUE/FALSE). We always cluster connected components, but if cluster = TRUE we cluster further}
 }
 
 \details{

@@ -5,7 +5,7 @@
 \title{Add user edgelist to edgelist found in graphite}
 
 \description{
-Combine user edges with those identified in graphite. This is a helper function in \code{prepareAdjacencyMatrixDB} and should not be called by the user.}
+Combine user edges with those identified in graphite. This is a helper function in \code{prepareAdjMat} and should not be called by the user.}
 
 \usage{
 addUserEdges(non_user_edges, user_edges)

@@ -9,6 +9,7 @@ prepareAdjMat <-
            penalize_diag = TRUE,
            eta=0.5
   ) {
+    . <- base_gene_src <- base_id_src <- base_gene_dest <- base_id_dest <- invcov <- lambda <- bic <- NULL #Added to avoid data.table note in R CMD check
     lambda_c = sort(lambda_c, decreasing = TRUE)
     genes <- setNames(gsub(".*:(.*)", "\\1", rownames(x)), gsub("(.*):.*", "\\1", rownames(x)))
                       
@@ -96,7 +97,7 @@ prepareAdjMat <-
 
 # Check user edges and non-edges. 
 checkUserEdges <- function(edgelist, non_edges){
-  
+  frequency <- . <- base_gene_src <- base_id_src <- base_gene_dest <- base_id_dest <- NULL #Added to avoid data.table note in R CMD check
   # Checking edgelist
   if(!is.null(edgelist)){
     
@@ -159,6 +160,7 @@ checkUserEdges <- function(edgelist, non_edges){
 
 # Add user edges. Error if they specify same edge more than once. Also, warning and use user edge if an edge is both user specified and in our database
 addUserEdges <- function(non_user_edges, user_edges){
+  . <- base_gene_src <- base_id_src <- base_gene_dest <- base_id_dest <- frequency <- NULL #Added to avoid data.table note in R CMD check
   
   if(is.null(user_edges) & !is.null(non_user_edges))      return(non_user_edges)
   else if(is.null(user_edges) & is.null(non_user_edges))  return(NULL)
@@ -194,6 +196,7 @@ addUserEdges <- function(non_user_edges, user_edges){
 # Convert edgelist to zero / one matrices. Edgelist should include user edges. Also output frequency of edges for later development work. Determines for you whether or not it is directed.
 # If genes are not in the databases, we don't make them non-edges. We are essentially saying "we have no info" about them.
 convertEdgeListToZeroOne <- function(edgelist, non_edges, genes, genes_not_in_dbs){
+  . <- base_id_src <- base_gene_src <- base_id_dest <- base_gene_dest <- is_undirected <- x.base_gene_src <- NULL #Added to avoid data.table note in R CMD check
   #This is the only place we need to paste names together. I like having them as separate variables
   genes            <- paste0(names(genes), ":", genes)
   genes_not_in_dbs <- if(!is.null(genes_not_in_dbs)) paste0(names(genes_not_in_dbs), ":", genes_not_in_dbs)
@@ -295,7 +298,7 @@ combineSingletons <- function(c_vec){
 
 #Function to get the clusters for a 0-1 Adjacency matrix
 obtainClusters <- function(A, order, cluster){
-
+  max_cluster_size <- membership <- perc_lost_edges <- NULL #Added to avoid data.table note in R CMD check
   #Converting to undirected for purposes of clustering
   A_graph <- igraph::as.undirected(igraph::graph_from_adjacency_matrix(A))
   ccs <- igraph::components(A_graph)$membership

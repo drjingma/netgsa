@@ -45,39 +45,3 @@ Jing Ma
 \seealso{
 \code{\link{netEst.undir}}
 }
-\examples{
-
-library(glassoFast)
-library(igraph)
-
-set.seed(1)
-
-## load the data
-data(breastcancer2012)
-
-## consider genes from the "ErbB signaling pathway" and "Jak-STAT signaling pathway"
-genenames <- unique(c(pathways[[24]], pathways[[52]]))
-p <- length(genenames)
-sx <- x[match(genenames, rownames(x)),]
-if (sum(is.na(rownames(sx)))>0){
-  sx <- sx[-which(is.na(rownames(sx))),]
-}
-file_e <- system.file("extdata", "edgelist.txt", package = "netgsa")
-out <- prepareAdjacencyMatrix(sx, group, pathways, FALSE, file_e, NULL)
-sx <- sx[match(colnames(out$B), rownames(sx)),]
-
-ncond <- length(unique(group))
-Amat <- vector("list",ncond)
-
-## -- Not run --
-
-# for (k in 1:ncond){
-#   data_c <- sx[,(group==k)]
-#   fitBIC <- bic.netEst.undir(data_c,one=out$Adj,
-#                              lambda=seq(1,10)*sqrt(log(p)/ncol(data_c)),eta=0.1)
-#   fit <- netEst.undir(data_c,one=out$Adj,
-#                       lambda=which.min(fitBIC$BIC)*sqrt(log(p)/ncol(data_c)),eta=0.1)
-#   Amat[[k]] <- fit$Adj
-# }
-
-}

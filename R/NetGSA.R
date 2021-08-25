@@ -144,6 +144,7 @@ NetGSA <-
 # Helper functions -----------------------------------------------------------------
 
 reshapePathways <- function(pathways){
+  . <- pathway <- gene <- NULL #Added to avoid data.table note in R CMD check
   res <- data.table::setDT(reshape2::melt(pathways, varnames = c("pathway", "gene")))
   res[, c("pathway", "gene") := .(as.character(pathway), as.character(gene))]
   return(res[res$value == 1,][,c("pathway", "gene")])

@@ -38,10 +38,6 @@ data("breastcancer2012")
 ls()
 ```
 
-<!-- Remove once package updated -->
-```{r, warning = FALSE, message = FALSE, echo = FALSE}
-devtools::load_all("/home/mike/Documents/Stat Research/Network GSA/GitHub/netgsa")
-```
 
 The objects loaded which are necessary for this vignette are:
 
@@ -84,7 +80,7 @@ table(group)
 
 ### Edgelist / Non-edgelist
 
-The edgelist and non-edgelist are strings representing file locations and are read in using `data.table`'s `fread()` command. Each observation is assumed to be a directed edge (for edgelist) or a directed non-edge (for non-edgelist). They both must have 4 columns in the following order. The columns do not necessarily need to be named properly, they simply must be in this specific order:
+The edgelist and non-edgelist are strings representing file locations and are read in using `data.table`'s `fread()` command. These are where users can specify known edges/non-edges of their own. Each observation is assumed to be a directed edge (for edgelist) or a directed non-edge (for non-edgelist). They both must have 4 columns in the following order. The columns do not necessarily need to be named properly, they simply must be in this specific order:
 
 * 1st column - Source gene (base_gene_src), e.g. "7534""
 * 2nd column - Gene identifier of the source gene (base_id_src), e.g. "ENTREZID"
@@ -108,19 +104,6 @@ paths[[1]]
 head(nodes(paths[[1]]))
 ```
 
-
-Alternatively, one can also use the function `preparePathways` to import pathways from KEGG or MSigDB. 
-```{r preparePathways}
-pathwayList <- preparePathways('kegg')
-head(pathwayList[[1]])
-```
-
-Note if one chooses to import pathways from **MSigDB**, genes in the resulting pathways will be labeled using gene symbols. As a result, the data matrix should also use the same set of gene names. 
-```{r MSigDB}
-pathwayList <- preparePathways('MSigDB')
-head(pathwayList[[1]])
-```
-
 For this vignette, we'll use `pathways_mat`:
 
 ```{r}
@@ -138,21 +121,16 @@ In summary, the data that we'll need to run our pathway enrichment analysis is:
 * pathway identifiers in matrix form (`pathways_mat`). 
  
 
-<!-- The two data frames `nonedgelist` and `edgelist` consist of edges (nonedges) extracted from user provided sources. Eace row represents one edge. The first column represents the starting node, with the second column being the end node. The last column indicates whether the edge is directed. As of now, NetGSA assumes that all edges are either simultaneously undirected or simultaneously directed, as determined by the first edge.   -->
-<!-- ```{r edgelist} -->
-<!-- head(edgelist) -->
-<!-- ``` -->
-
 ## Step 2: Pathway enrichment analysis
 
-Now that we have our data set-up properly we can begin with the pathway enrichment analysis. `netgsa` has two main functions. The first is `prepareAdjMat` which searches for edges in public databases and uses this information to estimate the adjacency matrices needed for `NetGSA`. The second is `NetGSA` which performs network-based gene set analysis. We will go into further details about the usage of these functions below.
+Now that we have our data set-up properly we can begin with the pathway enrichment analysis. `netgsa` has three main functions. The first is `prepareAdjMat` which searches for edges in public databases and uses this information to estimate the adjacency matrices needed for `NetGSA`. The second is `NetGSA` which performs network-based gene set analysis. We will go into further details about the usage of these functions below.
 
 
 ### prepareAdjMat
 
 After having the data set-up, the first step in pathway enrichment analysis with `netgsa` is to estimate the adjacency matrices. Remember, the rownames of the data matrix `X` must be named as `"GENE_ID:GENE_VALUE"` as in `"ENTREZID:7534"`. The `group` vector is defined as above.
 
-The `databases` argument can be either (1) the result of `obtainEdgeList` or (2) a character vector defining the databases to search. These are essentially the same thing, the only difference is that for the character vector method, `obtainEdgeList` is called inside `prepareAdjMat` and cannot be saved. Since `prepareAdjMat` queries the `graphite` databases when it is called and `graphite` databases can change overtime, this may not be desirable for reproducibility. Using the `obtainEdgeList` method, one can save the edgelist to ensure the same network information is used across iterations or in the future. In both methods, one must specify the databases to search. The options are the databases for homo spaiens available in `graphite`. These are:
+The `databases` argument can be either (1) the result of `obtainEdgeList` or (2) a character vector defining the databases to search. These are essentially the same thing, the only difference is that for the character vector method, `obtainEdgeList` is called inside `prepareAdjMat` and cannot be saved. Since `prepareAdjMat` queries the `graphite` databases when it is called and `graphite` databases can change overtime, this may not be desirable for reproducibility. Using the `obtainEdgeList` method, one can save the edgelist to ensure the same network information is used across iterations or in the future. In both methods, one must specify the databases to search. The options are the databases for homo spaiens available in `graphite` or NDEx. The graphite databases are:
 
 ```{r, echo = FALSE}
 as.character(graphite::pathwayDatabases()[graphite::pathwayDatabases()$species == "hsapiens","database"])
@@ -191,7 +169,7 @@ Note we cannot control cluster size which is why we try several methods and impl
 
 ### NetGSA
 
-Now that the adjacency matrices are assembled we can perform pathway inference using `NetGSA`. The returned value from `prepareAdjMat` will always be in the correct format regardless of whether or not clustering is used, so one should always be able to pass `network_info[["Adj"]]` directly to `NetGSA`. The default is to use restricted Haseman-Elston regression (REHE) with sampling to estimate the variance parameters. This allows for significant computational speed up and little to no loss in power [[CITE SOFTWARE NOTE]]. One can also use REML for variance parameter estimation but this can be quite slow for problems with moderate or large dimension. For explanatory purposes, we explicity write out the function:
+Now that the adjacency matrices are assembled we can perform pathway inference using `NetGSA`. The returned value from `prepareAdjMat` will always be in the correct format regardless of whether or not clustering is used, so one should always be able to pass `network_info[["Adj"]]` directly to `NetGSA`. The default is to use restricted Haseman-Elston regression (REHE) with sampling to estimate the variance parameters. This allows for significant computational speed up and little to no loss in power. One can also use REML for variance parameter estimation but this can be quite slow for problems with moderate or large dimension. For explanatory purposes, we explicitly write out the function:
 
 ```{r}
 pathway_tests_rehe <- NetGSA(network_info[["Adj"]], x, group, pathways_mat, 
@@ -218,7 +196,7 @@ If the user has Cytoscape open on their computer, calling `plot.NetGSA` will cre
     In addition to the main network, a network is generated for each pathway. These are the gene networks underlying each pathway and are referred to as the within pathway networks. The within pathway networks are linked to the nodes in the Pathway Network using Cytoscape's nested network format. An example will make this more clear. Calling:
 
     ```{r, eval = FALSE}
-    plot(pathway_tests_rehe)
+    plot.NetGSA(pathway_tests_rehe)
     ```
 
     The Pathway Network might look something like:

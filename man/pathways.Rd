@@ -4,7 +4,9 @@
 \name{pathways}
 \alias{pathways}
 \title{A list of KEGG pathways}
-\format{An object of class \code{list} of length 100.}
+\format{
+An object of class \code{list} of length 100.
+}
 \usage{
 pathways
 }

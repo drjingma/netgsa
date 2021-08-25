@@ -23,7 +23,7 @@ netEst.dir(x, zero = NULL, one = NULL, lambda, verbose = FALSE, eps = 1e-08)
 \details{
 The function \code{netEst.dir} performs constrained estimation of a directed network using a lasso (L1) penalty, as described in Shojaie and Michailidis (2010a). Two sets of constraints determine subsets of entries of the weighted adjacency matrix that should be exactly zero (the option \code{zero} argument), or should take non-zero values (option \code{one} argument). The remaining entries will be estimated from data.
 
-The arguments \code{one} and/or \code{zero} can come from external knowledge on the 0-1 structure of underlying network, such as a list of edges and/or non-edges learned from available databases. Then the function \code{prepareAdjacencyMatrix} can be used to first construct \code{one} and/or \code{zero}.
+The arguments \code{one} and/or \code{zero} can come from external knowledge on the 0-1 structure of underlying network, such as a list of edges and/or non-edges learned from available databases.
 
 In this function, it is assumed that the columns of \eqn{x} are ordered according to a correct (Wald) causal order, such that no \eqn{x_j} is a parent of \eqn{x_k} (\eqn{k \le j}). Given the causal ordering of nodes, the resulting adjacency matrix is lower triangular (see Shojaie & Michailidis, 2010b). Thus, only lower triangular parts of \code{zero} and \code{one} are used in this function. For this reason, it is important that both of these matrices are also ordered according to the causal order of the nodes in \eqn{x}. To estimate the network, first each node is regressed on the known edges (\code{one}). The residual obtained from this regression is then used to find the additional edges, among the nodes that could potentially interact with the given node (those not in \code{zero}).
 		
@@ -50,36 +50,6 @@ Ali Shojaie
 }
 
 \seealso{
-\code{\link{prepareAdjacencyMatrix}}, \code{\link{glmnet}}
+\code{\link{prepareAdjMat}}, \code{\link{glmnet}}
 }
-\examples{
-library(glmnet)
-library(graphite)
-library(igraph)
 
-set.seed(1)
-
-## load the data
-data(breastcancer2012)
-
-print(is_dag(g))
-
-genenames <- V(g)$name
-p <- length(genenames)
-
-# reorder the variables and get the adjacency matrix
-reOrder <- topo_sort(g,"in")
-Adj <- as.matrix(get.adjacency(g))
-Adj <- Adj[reOrder,reOrder]
-
-B <- matrix(rep(1,p),nrow=1)
-rownames(B) <- "Adrenergic signaling in cardiomyocytes"
-colnames(B) <- rownames(Adj)
-gx <- x[match(rownames(Adj), rownames(x)),]
-
-Amat <- vector("list", 2)
-for (k in 1:2){
-  data_c <- gx[,which(group==k)]
-  Amat[[k]] <- netEst.dir(data_c, one = Adj)$Adj
-}
-}

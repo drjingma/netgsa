@@ -14,9 +14,9 @@ An example data set consisting of RNA-seq gene expression data, KEGG pathways, e
     \item{\code{x}}{The \eqn{p \times n}{p x n} data matrix.}
     \item{\code{group}}{The vector of class indicators of length \eqn{n}.}
     \item{\code{pathways}}{A list of KEGG pathways.}
-    \item{\code{g}}{A directed acyclic graph corresponding to the Adrenergic signaling in cardiomyocytes pathway from KEGG.}
     \item{\code{edgelist}}{A data frame of edges, each row corresponding to one edge.}
     \item{\code{nonedgelist}}{A data frame of nonedges, each row corresponding to one negative edge.}
+    \item{\code{pathways_mat}}{Matrix with pathway indicators}
   }
 }
 \references{

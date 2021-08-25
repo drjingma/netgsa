@@ -21,8 +21,6 @@ Loads gene testing data into each pathway. Genes are tested using an F-test if t
 Custom formatting can be applied using the cytoscape GUI or the RCy3 pacakge.
 }
 
-\value{
-}
 
 
 \references{
@@ -38,8 +36,23 @@ Michael Hellstern
 }
 
 \examples{
+\donttest{
+library(igraph)
 
-#Cytoscape open
-plot(out_cluster)
+## load the data
+data("breastcancer2012")
+
+## consider genes from the "ErbB signaling pathway" and "Jak-STAT signaling pathway"
+genenames    <- unique(c(pathways[[24]], pathways[[52]]))
+sx           <- x[match(rownames(x), genenames, nomatch = 0L) > 0L,]
+
+db_edges       <- obtainEdgeList(rownames(sx), databases = c("kegg", "reactome", "biocarta"))
+adj_cluster    <- prepareAdjMat(sx, group, databases = db_edges, cluster = TRUE)
+out_cluster    <- NetGSA(adj_cluster[["Adj"]], sx, group, pathways_mat[c(24, 52), rownames(sx)], lklMethod = "REHE", sampling = FALSE, sample_n = 0.1, sample_p = 0.1)
+
+### Cytoscape closed or open
+plot(out_cluster) 
+my_layout <- function(graph) layout_with_graphopt(graph = graph, spring.length = 1000, spring.constant = 0.00004)
 formatPathways(out_cluster, "ErbB signaling pathway")
+}
 }

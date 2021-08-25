@@ -4,7 +4,9 @@
 \name{group}
 \alias{group}
 \title{The vector of class indicators}
-\format{An object of class \code{numeric} of length 520.}
+\format{
+An object of class \code{numeric} of length 520.
+}
 \usage{
 group
 }

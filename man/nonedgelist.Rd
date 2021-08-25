@@ -4,7 +4,9 @@
 \name{nonedgelist}
 \alias{nonedgelist}
 \title{A data frame of nonedges, each row corresponding to one negative edge}
-\format{An object of class \code{data.frame} with 500 rows and 3 columns.}
+\format{
+An object of class \code{data.frame} with 20 rows and 4 columns.
+}
 \usage{
 nonedgelist
 }

@@ -1,7 +1,5 @@
 #' Data matrix p by n 
 'x' 
-#' A directed acyclic graph corresponding to the Adrenergic signaling in cardiomyocytes pathway from KEGG
-'g' 
 #' The vector of class indicators 
 'group'
 #' A list of KEGG pathways
@@ -10,4 +8,6 @@
 'edgelist'
 #' A data frame of nonedges, each row corresponding to one negative edge
 'nonedgelist'
+#' Matrix with pathway indicators
+'pathways_mat'
     

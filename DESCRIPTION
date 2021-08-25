@@ -1,11 +1,14 @@
 Package: netgsa
 Type: Package
 Title: Network-Based Gene Set Analysis
-Version: 3.1.0
-Date: 2019-09-16
-Author: Jing Ma, Ali Shojaie and Kun Yue
-Maintainer: Jing Ma <jingma@fredhutch.org>
-Description: Carry out Network-based Gene Set Analysis by incorporating external information about interactions among genes, as well as novel interactions learned from data.
+Version: 4.0.0
+Date: 2020-04-28
+Authors@R: c(
+    person("Michael", "Hellstern", email = "mikeh1@uw.edu", role = c("aut","cre")),
+    person("Ali", "Shojaie", email = "ashojaie@uw.edu", role = c("aut")),
+    person("Jing", "Ma", role = "aut"),
+    person("Kun", "Yue", role = "aut"))
+Description: Carry out Network-based Gene Set Analysis by incorporating external information about interactions among genes, as well as novel interactions learned from data. Implements methods described in Shojaie A, Michailidis G (2010) <doi:10.1093/biomet/asq038>, Shojaie A, Michailidis G (2009) <doi:10.1089/cmb.2008.0081>, and Ma J, Shojaie A, Michailidis G (2016) <doi:10.1093/bioinformatics/btw410>
 Depends: R (>= 3.5.0)
 biocViews:
 Imports: 
@@ -29,10 +32,10 @@ Imports:
 	Rcpp (>= 1.0.2),
 	RcppEigen (>= 0.3.3.5.0)
 Suggests: knitr, MASS, rmarkdown
-License: GPL (>=2)
+License: GPL (>=3)
 LinkingTo: Rcpp, RcppEigen
 LazyLoad: yes
 LazyData: true
 VignetteBuilder: knitr
-URL: https://github.com/drjingma/netgsa
-RoxygenNote: 6.1.1
+URL: https://github.com/mikehellstern/netgsa
+RoxygenNote: 7.1.1

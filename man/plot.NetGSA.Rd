@@ -6,7 +6,7 @@
 Generates network plots in Cytoscape and igraph}
 
 \usage{
-plot.NetGSA(x, graph_layout = NULL, rescale_node = c(2,10), rescale_label = c(0.5,0.6))
+\method{plot}{NetGSA}(x, graph_layout = NULL, rescale_node = c(2,10), rescale_label = c(0.5,0.6), ...)
 }
 
 \arguments{
@@ -14,6 +14,7 @@ plot.NetGSA(x, graph_layout = NULL, rescale_node = c(2,10), rescale_label = c(0.
   \item{graph_layout}{(Optional) Layout to pass to plots. Either a function for igraph plots (when Cytoscape not open) or a string for Cytoscape. The igraph function should only take one parameter (an igraph object). See \code{igraph::layout_} for more details. For example one might create a custom layout by setting the spring.length and spring.constant with: \code{my_layout <- function(graph) layout_with_graphopt(graph = graph, spring.length = 1000, spring.constant = 0.00004)}. The string for Cytoscape will be passed to \code{RCy3::layoutNetwork}.}
   \item{rescale_node}{(Optional) Node size rescaling to pass to igraph plots. Must be a vector of length 2 with the first element being the minimum node size and the second being the maximum.}
   \item{rescale_label}{(Optional) Label size rescaling to pass to igraph plots. Must be a vector of length 2 with the first element being the minimum node size and the second being the maximum.}
+  \item{...}{Other arguments not used by this method}
   }
   
 \details{
@@ -31,8 +32,8 @@ There are two R plots also generated. The first is the legend for Cytoscape. The
 }
 
 \value{
+No return value, plots NetGSA object
 }
-
 
 \references{
 Ma, J., Shojaie, A. & Michailidis, G. (2016) Network-based pathway enrichment analysis with incomplete network information. Bioinformatics 32(20):165--3174. 
@@ -44,4 +45,24 @@ Michael Hellstern
 
 \seealso{
 \code{\link{NetGSA}}
+}
+
+\examples{
+\donttest{
+library(igraph)
+
+## load the data
+data("breastcancer2012")
+
+## consider genes from the "ErbB signaling pathway" and "Jak-STAT signaling pathway"
+genenames    <- unique(c(pathways[[24]], pathways[[52]]))
+sx           <- x[match(rownames(x), genenames, nomatch = 0L) > 0L,]
+
+db_edges       <- obtainEdgeList(rownames(sx), databases = c("kegg", "reactome", "biocarta"))
+adj_cluster    <- prepareAdjMat(sx, group, databases = db_edges, cluster = TRUE)
+out_cluster    <- NetGSA(adj_cluster[["Adj"]], sx, group, pathways_mat[c(24, 52), rownames(sx)], lklMethod = "REHE", sampling = FALSE, sample_n = 0.1, sample_p = 0.1)
+
+### Cytoscape closed or open
+plot(out_cluster) 
+}
 }

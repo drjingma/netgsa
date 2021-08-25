@@ -5,7 +5,7 @@
 \title{Combine edges from databases into a data.table}
 
 \description{
-Retrieves edges from specified databases and stacks them into one data.table.This is a helper function in \code{prepareAdjacencyMatrixDB} and should not be called by the user.}
+Retrieves edges from specified databases and stacks them into one data.table.This is a helper function in \code{prepareAdjMat} and should not be called by the user.}
 
 
 \usage{

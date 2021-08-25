@@ -4,7 +4,9 @@
 \name{edgelist}
 \alias{edgelist}
 \title{A data frame of edges, each row corresponding to one edge}
-\format{An object of class \code{data.frame} with 2959 rows and 3 columns.}
+\format{
+An object of class \code{data.frame} with 2959 rows and 4 columns.
+}
 \usage{
 edgelist
 }

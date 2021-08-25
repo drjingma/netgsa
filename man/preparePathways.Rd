@@ -29,8 +29,8 @@ Jing Ma (jingma@fredhutch.org)
 }
 
 \seealso{
-\code{\link{NetGSA}}, \code{\link{prepareAdjacencyMatrix}}
-}
+\code{\link{NetGSA}}}
+
 \examples{
 #library(graphite)
 

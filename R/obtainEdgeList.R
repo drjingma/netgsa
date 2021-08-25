@@ -1,4 +1,5 @@
 obtainEdgeList <- function(genes, databases){
+  conversion_type <- . <- converted_gene <- converted_id <- direction <- dest <- dest_type <- src <- src_type <- base_gene_dest <- base_id_dest <- base_gene_src <- base_id_src <- database <- NULL #Added to avoid data.table note in R CMD check
   genes <- setNames(gsub(".*:(.*)", "\\1", genes), gsub("(.*):.*", "\\1", genes))
 
   metabolites_ids   <- as.data.table(graphite:::metabolites())
@@ -51,7 +52,7 @@ obtainEdgeList <- function(genes, databases){
 
 # Wrapper to stack databases of interest 
   stackDatabases <- function(databases){
-    
+    . <- database <- src <- src_type <- dest <- dest_type <- direction <- NULL #Added to avoid data.table note in R CMD check
     not_in_graphite <- ! databases %in% unique(as.character(graphite::pathwayDatabases()[["database"]]))
     if(any(not_in_graphite)) stop(paste0("Database(s): ", paste0(databases[not_in_graphite], collapse = ", "), 
                                                           " are not found within graphite. Please choose databases from graphite::pathwayDatabases()$database"))
@@ -120,6 +121,7 @@ obtainEdgeList <- function(genes, databases){
 
 # Finding set of ids used across chosen databases
   findDatabaseIDs <- function(databases, metabolites){
+    src_type <- dest_type <- NULL #Added to avoid data.table note in R CMD check
     uniq_ids                   <- databases[, unique(c(src_type, dest_type))]
     
     # IDs are converted either with metabolites from graphite OR org.Hs.eg.db
@@ -174,7 +176,7 @@ obtainEdgeList <- function(genes, databases){
 
 #Given edgelist from stackDatabases and idlist from convertID functions, get the genes not in the database ever
   findGenesNotInDb <- function(edgelist, idlist){
-    
+    . <- converted_gene <- converted_id <- dest <- base_gene <- base_id <- src <- in_db <- any_in_db_src <- any_in_db_dest <- any_in_db <- NULL #Added to avoid data.table note in R CMD check
     src_m  <- edgelist[idlist, on = .(src  = converted_gene, src_type  = converted_id), .(in_db = max(!is.na(dest)),  base_gene, base_id), nomatch = NA, by = .EACHI]
     dest_m <- edgelist[idlist, on = .(dest = converted_gene, dest_type = converted_id), .(in_db = max(!is.na(src)), base_gene, base_id), nomatch = NA, by = .EACHI]
     
@@ -193,6 +195,7 @@ obtainEdgeList <- function(genes, databases){
   #Assumes all edges are undirected
   #Only searches public
   addNDEx <- function(edgelist, genes){
+    externalId <- NULL
     ndexcon = ndexr::ndex_connect()
     #Find NDEx networks that have any of our genes as nodeNames. Only option appears to be string search in nodeNames 
     #(e.g. if gene is "38" this will match a nodeName of "3801" in NDEx). Also NDEx is by default an OR search, e.g.
@@ -216,6 +219,7 @@ obtainEdgeList <- function(genes, databases){
   }
   
   NDEx_query_subnetwork <- function(ndex_network_id, ndexcon, search_names, genes){
+    src <- i.n <- dest <- . <- NULL #To get rid of data.table package build notes
     query <- jsonlite::toJSON(list(searchString = paste(search_names, collapse = " ")), auto_unbox = TRUE)
     response <- ndexr:::ndex_rest_POST(ndexcon, route = paste0("/search/network/",ndex_network_id, "/query?save=false"), data = query, raw = FALSE)
     #Get nodelist/edgelist from query

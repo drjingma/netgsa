@@ -9,11 +9,11 @@ SEXP crossprodCpp(SEXP A, SEXP B = R_NilValue){
   if (TYPEOF(A) != REALSXP | (!Rf_isNull(B) & TYPEOF(B) != REALSXP)) {
     Rcpp::stop("Non-numeric matrix detected. Please convert integer/strings to numeric");
   }
-    const Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd>>(A));
+    const Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd> >(A));
     MatrixXd C;
     //If not null do crossprod. Otherwise do crossprod with self
     if(!Rf_isNull(B)){
-      const Map<Eigen::MatrixXd> BB(Rcpp::as<Map<MatrixXd>>(B));
+      const Map<Eigen::MatrixXd> BB(Rcpp::as<Map<MatrixXd> >(B));
       if(AA.rows() != BB.rows()){
         Rcpp::stop("non-conformable arguments");
       }
@@ -30,8 +30,8 @@ SEXP matMult( SEXP A, SEXP B){
   if (TYPEOF(A) != REALSXP | TYPEOF(B) != REALSXP) {
     Rcpp::stop("Non-numeric matrix detected. Please convert integer/strings to numeric");
   }
-    const Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd>>(A));
-    const Map<MatrixXd> BB(Rcpp::as<Map<MatrixXd>>(B));
+    const Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd> >(A));
+    const Map<MatrixXd> BB(Rcpp::as<Map<MatrixXd> >(B));
     if(AA.cols() != BB.rows()){
       Rcpp::stop("non-conformable arguments");
     }
@@ -48,13 +48,13 @@ SEXP solveCpp( SEXP A, SEXP B = R_NilValue){
   if (TYPEOF(A) != REALSXP | (!Rf_isNull(B) & TYPEOF(B) != REALSXP)) {
     Rcpp::stop("Non-numeric matrix detected. Please convert integer/strings to numeric");
   }
-    const Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd>>(A));
+    const Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd> >(A));
     if(AA.cols() != AA.rows()){
       Rcpp::stop("'A' must be square");
     }
     MatrixXd C;
     if (!Rf_isNull(B)){
-      const Map<Eigen::MatrixXd> BB(Rcpp::as<Map<MatrixXd>>(B));
+      const Map<Eigen::MatrixXd> BB(Rcpp::as<Map<MatrixXd> >(B));
       if(AA.cols() != BB.rows()){
         Rcpp::stop("B' must be compatible with 'A'");
       }
@@ -71,7 +71,7 @@ SEXP cholCpp( SEXP A){
   if (TYPEOF(A) != REALSXP) {
     Rcpp::stop("Non-numeric matrix detected. Please convert integer/strings to numeric");
   }
-    Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd>>(A));
+    Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd> >(A));
     if(AA.cols() != AA.rows()){
       Rcpp::stop("'A' must be square");
     }
@@ -84,7 +84,7 @@ SEXP pseudoinverseCpp( SEXP A){
   if (TYPEOF(A) != REALSXP) {
     Rcpp::stop("Non-numeric matrix detected. Please convert integer/strings to numeric");
   }
-  const Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd>>(A));
+  const Map<MatrixXd> AA(Rcpp::as<Map<MatrixXd> >(A));
   const Eigen::MatrixXd pinv(AA.completeOrthogonalDecomposition().pseudoInverse());
   return Rcpp::wrap(pinv);
 }

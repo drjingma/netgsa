@@ -10,7 +10,7 @@ Estimates network using \code{netEst.dir} or \code{netEst.undir} for each cluste
 
 
 \usage{
-netEstClusts(grp, X, group, net_info, n, p, lambda_c, eta, net_clusters)
+netEstClusts(grp, X, group, net_info, n, lambda_c, eta, net_clusters, penalize_diag)
 }
 
 
@@ -20,10 +20,10 @@ netEstClusts(grp, X, group, net_info, n, p, lambda_c, eta, net_clusters)
   \item{group}{Vector specifying which columns in the data matrix correspond to which condition or group}
   \item{net_info}{List with named elements "zero" and "one" corresponding to the zero and one information matrices used in \code{netEst.dir} and \code{netEst.undir}}
   \item{n}{Vector of the total number of observations for \code{grp}. Used to determine \code{lambda} in \code{netEst.dir} and \code{netEst.undir}}
-  \item{p}{Total number of genes. Used to determine \code{lambda} in \code{netEst.dir} and \code{netEst.undir}}
   \item{lambda_c}{lambda constant. Used to determine \code{lambda} in \code{netEst.dir} and \code{netEst.undir}}
   \item{eta}{Value of eta passed to \code{netEst.undir}}
   \item{net_clusters}{Named numeric vector specifying which genes correspond to which clusters. Names are genes and the values are their corresponding clusters}
+  \item{penalize_diag}{TRUE/FALSE - whether or not to penalize diagonal}
 }
 
 \details{

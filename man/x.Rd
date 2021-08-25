@@ -4,7 +4,9 @@
 \name{x}
 \alias{x}
 \title{Data matrix p by n}
-\format{An object of class \code{matrix} with 2598 rows and 520 columns.}
+\format{
+An object of class \code{matrix} (inherits from \code{array}) with 2598 rows and 520 columns.
+}
 \usage{
 x
 }
