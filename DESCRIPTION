@@ -1,8 +1,8 @@
 Package: netgsa
 Type: Package
 Title: Network-Based Gene Set Analysis
-Version: 4.0.0
-Date: 2020-04-28
+Version: 4.0.1
+Date: 2020-09-13
 Authors@R: c(
     person("Michael", "Hellstern", email = "mikeh1@uw.edu", role = c("aut","cre")),
     person("Ali", "Shojaie", email = "ashojaie@uw.edu", role = c("aut")),
