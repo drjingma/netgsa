@@ -4,28 +4,35 @@ Network-based Gene Set Analysis
 This package carries out Network-based Gene Set Analysis by incorporating external information about interactions among genes, as well as novel interactions learned from data.
 
 
-## **Package Installation**
-You can install it directly from GitHub through `devtools`:
+## How to install?
 
+You can install it directly from CRAN:
 ```
+install.packages("netgsa",build_vignettes=T)
+```
+
+Reference manual is available on [CRAN](https://cran.r-project.org/web/packages/netgsa/index.html). A [vignette](https://cran.r-project.org/web/packages/netgsa/vignettes/netgsa.html) on how to use NetGSA is also available. A development version is available on [GitHub](https://github.com/drjingma/netgsa) and can be installed via the following:
+```r
 library(devtools)
-devtools::install_github("mikehellstern/netgsa", build_vignettes=T)
+devtools::install_github("drjingma/netgsa", build_vignettes=T)
 ```
+More details about the method implemented can be found in the original paper [here](http://drjingma.com/papers/ma-netgsa) and a follow-up review paper [here](http://drjingma.com/papers/review). 
 
-## Updates
+## Why should someone use `netgsa`?
 
-The most recent implementation has optimized the NetGSA computation in the following aspects:
+ - NetGSA incorporates the rich network information curated in public databases (e.g. KEGG, reactome, etc.) and/or learned from high-throughput sequencing data, thereby gaining power in detecting active genetic/metabolic pathways.
 
-* Variance component estimation: Residuals are needed to estimate the variance components. This is done directly without evaluating the fixed effect coefficients. 
-* Contrast vector/matrix: This is done more efficiently by leveraging the `lapply` function; products of the contrast vectors are first computed and reused to calculate the degrees of freedom and test statistics. 
-* In the main function `NetGSA`, the default input `A` is a list of adjacency matrices across the tested groups. For each group, we assume that its adjacency matrix is again coded as a list of smaller matrices (or in the extreme case, one matrix of size `p`). We do not assume the adjancency matrices across groups to have the same block diagonal structure. For this particular structure, I removed the check on variable compatibility between the adjacency matrices and the input data, but this should be added later.  
-* Note the use of `adj2inf` should not change if we have block diagonal adj matrix, because the list of eigenvalues remain the same. 
-* The fixed effect coefficients `beta` is currently an output from the main function `NetGSA`, but do we need it? Is there a better way of estimating beta given the block diagonal structure of D?
-* Although it was mentioned in the notes that we may not need to assemble the entire adjacency matrix to get the test statistic for a given pathway, in practice we may be working with more pathways. Would it be better if we assemble the entire adjacency matrix anyway to avoid repeatedly subsetting variables? In either case, before running `NetGSA`, we should make sure to filter variables in the input data matrix to keep only those that belong to at least one tested pathway.
+## How does it compare to other methods?
 
+ - NetGSA tests the self-contained null hypothesis and compares the set of genes in a given pathway with itself. 
+ - NetGSA allows users to complement potentially misspecified information in public databases with high-throughput sequencing data.
+ - NetGSA is particularly powerful in detecting active metabolic pathways from metabolomic data where the pathway size is relatively small and available metabolic network information is sparse.  
+ - See more details in our review paper [here](http://drjingma.com/papers/review).
 
-## **References**
-**Ma, Jing, Shojaie, Ali and Michailidis, George.** (2016) Network-based pathway enrichment analysis with incomplete network information. Bioinformatics https://doi.org/10.1093/bioinformatics/btw410
+## Notes
+
+ - NetGSA is based on a linear mixed model. Estimation of the variance components in this model can be done via restricted maximum likelihood or via the restricted Haseman-Elston (REHE) regression. See our recent paper [here](http://drjingma.com/papers/REHE) for fast variance components estimation with REHE. 
+ - NetGSA is seamlessly integrated with external databases on gene-gene interactions and utilizes Cytoscape for interactive visualization of enriched pathways. Moreover, NetGSA can handle thousands of genes within minutes. See [here](http://drjingma.com/papers/netgsa) for details on how we improved the computation and visualization of NetGSA.  
 
 
   [![Travis-CI Build Status](https://travis-ci.org/drjingma/netgsa.svg?branch=master)](https://travis-ci.org/drjingma/netgsa)
