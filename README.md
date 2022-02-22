@@ -1,8 +1,3 @@
----
-layout: project
-title: netgsa/
-project: netgsa
----
 
 # About
 
